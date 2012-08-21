@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 141
+/projects/!svn/ver/341/https:/svn.patrikdufresne.com/projects/com.patrikdufresne.managers/trunk/unittest/managers/com/patrikdufresne/managers
+END
+AllTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 155
+/projects/!svn/ver/341/https:/svn.patrikdufresne.com/projects/com.patrikdufresne.managers/trunk/unittest/managers/com/patrikdufresne/managers/AllTests.java
+END
+MockEntityManager.java
+K 25
+svn:wc:ra_dav:version-url
+V 164
+/projects/!svn/ver/341/https:/svn.patrikdufresne.com/projects/com.patrikdufresne.managers/trunk/unittest/managers/com/patrikdufresne/managers/MockEntityManager.java
+END
+MockManagers.java
+K 25
+svn:wc:ra_dav:version-url
+V 159
+/projects/!svn/ver/341/https:/svn.patrikdufresne.com/projects/com.patrikdufresne.managers/trunk/unittest/managers/com/patrikdufresne/managers/MockManagers.java
+END
+AbstractManagerTestCase.java
+K 25
+svn:wc:ra_dav:version-url
+V 170
+/projects/!svn/ver/341/https:/svn.patrikdufresne.com/projects/com.patrikdufresne.managers/trunk/unittest/managers/com/patrikdufresne/managers/AbstractManagerTestCase.java
+END
+MockEntity.java
+K 25
+svn:wc:ra_dav:version-url
+V 157
+/projects/!svn/ver/341/https:/svn.patrikdufresne.com/projects/com.patrikdufresne.managers/trunk/unittest/managers/com/patrikdufresne/managers/MockEntity.java
+END
+ObjectIdentityTrackerTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 172
+/projects/!svn/ver/341/https:/svn.patrikdufresne.com/projects/com.patrikdufresne.managers/trunk/unittest/managers/com/patrikdufresne/managers/ObjectIdentityTrackerTest.java
+END
+ManagersTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 159
+/projects/!svn/ver/341/https:/svn.patrikdufresne.com/projects/com.patrikdufresne.managers/trunk/unittest/managers/com/patrikdufresne/managers/ManagersTest.java
+END
