@@ -8,6 +8,12 @@ import java.util.Collection;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Test the {@link ObjectIdentityTracker} class.
+ * 
+ * @author Patrik Dufresne
+ * 
+ */
 public class ObjectIdentityTrackerTest {
 
 	private ObjectIdentityTracker tracker;

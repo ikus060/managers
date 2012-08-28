@@ -1,22 +1,42 @@
 package com.patrikdufresne.managers;
 
-import com.patrikdufresne.managers.DatabaseConfiguration;
+import org.hibernate.cfg.Configuration;
+
 import com.patrikdufresne.managers.DatabaseUrl;
 import com.patrikdufresne.managers.IManager;
 import com.patrikdufresne.managers.Managers;
 
+/**
+ * Managers for unit test
+ * 
+ * @author Patrik Dufresne
+ * 
+ */
 public class MockManagers extends Managers {
 
+	/**
+	 * The entity manager
+	 */
 	private MockEntityManager mockEntityManager;
 
-	public MockManagers(DatabaseUrl url) {
+	/**
+	 * Default constructor.
+	 * 
+	 * @param url
+	 *            the database url
+	 * @throws ManagerException
+	 */
+	public MockManagers(DatabaseUrl url) throws ManagerException {
 		super(url);
-		// TODO Auto-generated constructor stub
 	}
 
+	/**
+	 * This implementation add only one annotated class.
+	 */
 	@Override
-	protected void configure(DatabaseConfiguration cfg) {
-		cfg.addAnnotatedClass(MockEntity.class);
+	protected void configure(Configuration config) {
+		super.configure(config);
+		config.addAnnotatedClass(MockEntity.class);
 	}
 
 	public MockEntityManager getMockEntityManager() {

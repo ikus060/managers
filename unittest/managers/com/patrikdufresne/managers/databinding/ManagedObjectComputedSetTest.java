@@ -9,12 +9,12 @@ import org.eclipse.core.databinding.observable.set.IObservableSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.patrikdufresne.managers.AbstractManagerTestCase;
+import com.patrikdufresne.managers.AbstractManagerTest;
 import com.patrikdufresne.managers.ManagerException;
 import com.patrikdufresne.managers.MockEntity;
 
 @RunWith(DatabindingClassRunner.class)
-public class ManagedObjectComputedSetTest extends AbstractManagerTestCase {
+public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 
 	@Test
 	public void AddObjectUpdatesSet() {

@@ -7,11 +7,22 @@ import javax.persistence.Entity;
 
 import com.patrikdufresne.managers.ManagedObject;
 
+/**
+ * Entity for unit testing
+ * 
+ * @author Patrik Dufresne
+ * 
+ */
 @Entity
 public class MockEntity extends ManagedObject {
 
+	/**
+	 * Name property key
+	 */
+	public static final String NAME = "name";
+
 	private List<String> items;
-	private String string;
+	private String name;
 
 	@ElementCollection
 	public List<String> getItems() {
@@ -22,13 +33,12 @@ public class MockEntity extends ManagedObject {
 		this.items = items;
 	}
 
-	public void setString(String value) {
-		changeSupport.firePropertyChange("array", this.string,
-				this.string = value);
+	public void setName(String value) {
+		changeSupport.firePropertyChange(NAME, this.name, this.name = value);
 	}
 
-	public String getString() {
-		return this.string;
+	public String getName() {
+		return this.name;
 	}
 
 }

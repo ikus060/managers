@@ -32,17 +32,9 @@ public class ManagerEvent {
 	 */
 	public static final int UPDATE = (1 << 2);
 	/**
-	 * Object's parent has changed.
-	 */
-	public static final int UPDATE_PARENT = (1 << 3);
-	/**
-	 * For internal used - reload of the object is required.
-	 */
-	public static final int RELOAD = (1 << 4);
-	/**
 	 * All flags.
 	 */
-	public static final int ALL = ADD | UPDATE | REMOVE | UPDATE_PARENT;
+	public static final int ALL = ADD | UPDATE | REMOVE;
 	/**
 	 * The event type.
 	 */
