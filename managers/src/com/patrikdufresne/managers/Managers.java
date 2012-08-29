@@ -47,6 +47,21 @@ import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 public abstract class Managers {
 
 	/**
+	 * Open the database in creation mode.
+	 */
+	private static final String CREATE = "create";
+
+	/**
+	 * Open the database in update mode
+	 */
+	private static final String UPDATE = "update";
+
+	/**
+	 * Open the database in validate mode.
+	 */
+	private static final String VALIDATE = "validate";
+
+	/**
 	 * Check the url object. Generate an exception in case it's invalid.
 	 * 
 	 * @param url
@@ -68,6 +83,7 @@ public abstract class Managers {
 	private EventManager eventManager;
 
 	private SessionFactory factory;
+
 	/**
 	 * Hibernate integrator
 	 */
@@ -87,7 +103,7 @@ public abstract class Managers {
 				SessionFactoryImplementor sessionFactory,
 				SessionFactoryServiceRegistry serviceRegistry) {
 
-			CustomListener listener = new CustomListener();
+			CustomListener listener = new CustomListener(Managers.this);
 
 			EventListenerRegistry eventListenerRegistry = serviceRegistry
 					.getService(EventListenerRegistry.class);
@@ -111,12 +127,16 @@ public abstract class Managers {
 
 	};
 
+	private String mode;
+
 	private Server server;
 
 	/**
 	 * This session factory observer is used to stop server.
 	 */
 	private SessionFactoryObserver sessionFactoryObserver = new SessionFactoryObserver() {
+
+		private static final long serialVersionUID = 1L;
 
 		@Override
 		public void sessionFactoryClosed(SessionFactory factory) {
@@ -125,7 +145,12 @@ public abstract class Managers {
 
 		@Override
 		public void sessionFactoryCreated(SessionFactory factory) {
-			// Nothing to do
+			// Validate or update the database
+			if (mode.equals(VALIDATE)) {
+				validateDatabase(factory);
+			} else if (mode.equals(UPDATE)) {
+				updateDatabase(factory);
+			}
 		}
 
 	};
@@ -176,14 +201,21 @@ public abstract class Managers {
 	 * @param list
 	 *            the list of objects
 	 */
-	public void addAll(List<? extends ManagedObject> list)
+	public void addAll(final List<? extends ManagedObject> list)
 			throws ManagerException {
-		// TODO do it in one transaction.
-		for (ManagedObject o : list) {
-			IManager<ManagedObject> manager = (IManager<ManagedObject>) getManagerForClass(o
-					.getClass());
-			manager.add(Arrays.asList(o));
-		}
+		// Open one transaction
+		exec(new Exec() {
+			@Override
+			public void run() throws ManagerException {
+				// Add each entities
+				for (ManagedObject o : list) {
+					IManager<ManagedObject> manager = (IManager<ManagedObject>) getManagerForClass(o
+							.getClass());
+					manager.add(Arrays.asList(o));
+				}
+			}
+		});
+
 	}
 
 	/**
@@ -229,7 +261,7 @@ public abstract class Managers {
 				ThreadLocalSessionContext.class.getCanonicalName());//$NON-NLS-1$ 
 
 		// Display SQL statement
-		config.setProperty(Environment.SHOW_SQL, showSQL() ? "true" : "false");//$NON-NLS-1$ //$NON-NLS-2$
+		config.setProperty(Environment.SHOW_SQL, "true");//$NON-NLS-1$ //$NON-NLS-2$
 
 		// Set a session listener
 		config.setSessionFactoryObserver(this.sessionFactoryObserver);
@@ -243,9 +275,10 @@ public abstract class Managers {
 
 			// Drop and re-create the database schema on startup
 			if (!file.exists()) {
-				config.setProperty(Environment.HBM2DDL_AUTO, "create");//$NON-NLS-1$ 			
+				this.mode = CREATE;
+				config.setProperty(Environment.HBM2DDL_AUTO, "create");//$NON-NLS-1$
 			} else {
-				config.setProperty(Environment.HBM2DDL_AUTO, "update");//$NON-NLS-1$
+				this.mode = UPDATE;
 			}
 
 			// Need to open a H2DB server locallysFs
@@ -253,13 +286,12 @@ public abstract class Managers {
 		} else {
 			// Set the connection string
 			config.setProperty(Environment.URL, url.toString());
-			//
-			config.setProperty(Environment.HBM2DDL_AUTO, "validate");//$NON-NLS-1$
+			this.mode = VALIDATE;
 		}
 	}
 
 	/**
-	 * Disposed this managers.
+	 * Disposed this managers and close sessions.
 	 */
 	public void dispose() {
 		if (this.factory != null) {
@@ -268,6 +300,13 @@ public abstract class Managers {
 		this.factory = null;
 	}
 
+	/**
+	 * Use to execute an operation withing one transaction.
+	 * 
+	 * @param runnable
+	 *            the runnable to execute
+	 * @throws ManagerException
+	 */
 	public void exec(Exec runnable) throws ManagerException {
 		run(runnable);
 	}
@@ -391,10 +430,11 @@ public abstract class Managers {
 	 */
 	public void removeAll(final List<? extends ManagedObject> list)
 			throws ManagerException {
-
+		// Open one transaction
 		exec(new Exec() {
 			@Override
 			public void run() throws ManagerException {
+				// Remove the entities
 				for (ManagedObject o : list) {
 					getManagerForClass(o.getClass()).remove(Arrays.asList(o));
 				}
@@ -454,7 +494,7 @@ public abstract class Managers {
 			EventTable table = ManagerContext.getDefault().getEventTable();
 			if (table.size() > 0) {
 				table = table.clone();
-				this.sendEvents(table);
+				this.eventManager.sendEvents(table);
 				table.clear();
 			}
 		} else {
@@ -466,30 +506,6 @@ public abstract class Managers {
 			}
 		}
 		return result;
-	}
-
-	public void sendEvents(EventTable events) {
-		this.eventManager.sendEvents(events);
-	}
-
-	/**
-	 * Add a database updater.
-	 * 
-	 * @param updater
-	 */
-	public void setUpdater(IDatabaseUpdater updater) {
-		// this.updater = updater;
-	}
-
-	/**
-	 * Check if this managers should show the SQL.
-	 * <p>
-	 * Subclasses may implementation this function to enable the log.
-	 * 
-	 * @return True to show the SQL.
-	 */
-	private boolean showSQL() {
-		return false;
 	}
 
 	/**
@@ -525,14 +541,55 @@ public abstract class Managers {
 		this.server.stop();
 	}
 
-	public void updateAll(List<? extends ManagedObject> list)
+	/**
+	 * Used to update multiple entities
+	 * 
+	 * @param list
+	 *            the collection of entity
+	 * @throws ManagerException
+	 */
+	public void updateAll(final List<? extends ManagedObject> list)
 			throws ManagerException {
-		// TODO do it in one transaction.
-		for (ManagedObject o : list) {
-			IManager<ManagedObject> manager = (IManager<ManagedObject>) getManagerForClass(o
-					.getClass());
-			manager.update(Arrays.asList(o));
-		}
+		// Open a transaction
+		exec(new Exec() {
+			@Override
+			public void run() throws ManagerException {
+				// Update the entities
+				for (ManagedObject o : list) {
+					IManager<ManagedObject> manager = (IManager<ManagedObject>) getManagerForClass(o
+							.getClass());
+					manager.update(Arrays.asList(o));
+				}
+			}
+		});
+
+	}
+
+	/**
+	 * This function is called by the managers when the database shema may
+	 * required to be updated. Sub-classes implementing this function should
+	 * detect if an update is required and update the shema.
+	 * <p>
+	 * Sub-classes should use {@link DatabaseUpdateHelper} to get the metadata
+	 * and to alter it.
+	 * 
+	 * @param factory
+	 */
+	protected void updateDatabase(SessionFactory factory) {
+		// Nothing to do
+	}
+
+	/**
+	 * This function is called by the manager when the database schema is open
+	 * in validation mode.
+	 * <p>
+	 * Sub-classes should use the {@link DatabaseUpdateHelper} to get the
+	 * metadata to be validated
+	 * 
+	 * @param factory
+	 */
+	protected void validateDatabase(SessionFactory factory) {
+
 	}
 
 }

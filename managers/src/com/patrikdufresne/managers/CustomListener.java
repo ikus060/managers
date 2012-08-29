@@ -44,9 +44,15 @@ public class CustomListener implements PostInsertEventListener,
 	private ObjectIdentityTracker tracker;
 
 	/**
+	 * Associated managers.
+	 */
+	private Managers managers;
+
+	/**
 	 * Create a new interceptor.
 	 */
-	public CustomListener() {
+	public CustomListener(Managers managers) {
+		this.managers = managers;
 		this.tracker = new ObjectIdentityTracker();
 	}
 
@@ -96,9 +102,11 @@ public class CustomListener implements PostInsertEventListener,
 
 	}
 
+	/**
+	 * This implementation register the loaded entity.
+	 */
 	@Override
 	public void onPostLoad(PostLoadEvent event) {
-		// TODO Auto-generated method stub
 		String entityName = event.getEntity().getClass().getCanonicalName();
 		this.tracker.register(entityName, event.getId(), event.getEntity());
 	}

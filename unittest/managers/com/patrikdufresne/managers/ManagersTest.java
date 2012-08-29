@@ -3,8 +3,10 @@ package com.patrikdufresne.managers;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import org.junit.Test;
@@ -38,12 +40,22 @@ public class ManagersTest extends AbstractManagerTest {
 
 		MockEntity entity = new MockEntity();
 		entity.setName("a");
+		assertNull(entity.getCreationDate());
+		assertNull(entity.getModificationDate());
 		getManagers().getMockEntityManager().add(Arrays.asList(entity));
 
 		assertEquals("Wrong number of entities", 1, getManagers()
 				.getMockEntityManager().list().size());
 
 		assertEquals("Wrong number of event", 1, counter.size());
+
+		// Check value of creation date and modification date
+		assertNotNull(entity.getCreationDate());
+		assertNotNull(entity.getModificationDate());
+		assertEquals((new Date()).getTime(),
+				entity.getCreationDate().getTime(), 60000);
+		assertEquals((new Date()).getTime(), entity.getModificationDate()
+				.getTime(), 60000);
 
 	}
 
@@ -77,10 +89,18 @@ public class ManagersTest extends AbstractManagerTest {
 		entity.setName("b");
 		getManagers().updateAll(Arrays.asList(entity));
 
+		// Check number of events
 		assertEquals("Wrong number of event.", 1, counter.size());
 
+		// Check entities value
 		assertEquals("b", entity.getName());
 		assertEquals("b", entity2.getName());
+
+		// Check value of creation date and modification date
+		assertNotNull(entity.getModificationDate());
+		assertEquals((new Date()).getTime(), entity.getModificationDate()
+				.getTime(), 60000);
+		assertEquals(entity.getModificationDate(), entity.getModificationDate());
 
 	}
 
