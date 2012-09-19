@@ -319,4 +319,23 @@ public class ManagersTest extends AbstractManagerTest {
 
 	}
 
+	@Test(expected = ManagerException.class)
+	public void testQuery_WithSafeQuery_ExpectCallToHandleException()
+			throws ManagerException {
+
+		getManagers().query(new SafeQuery<MockEntity>() {
+
+			@Override
+			public MockEntity run() throws ManagerException {
+				throw new RuntimeException("my custom exception");
+			}
+
+			@Override
+			public void handleException(Throwable exception) {
+				assertEquals("my custom exception", exception.getMessage());
+			}
+
+		});
+
+	}
 }

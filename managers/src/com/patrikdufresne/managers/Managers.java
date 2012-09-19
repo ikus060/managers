@@ -507,6 +507,9 @@ public abstract class Managers {
 				// new session.
 				ManagerContext.getDefault().getSession().getTransaction()
 						.rollback();
+				if(runnable instanceof SafeQuery){
+					((SafeQuery)runnable).handleException(e);
+				}
 				throw new ManagerException(e);
 			} finally {
 				// Unset the default session
