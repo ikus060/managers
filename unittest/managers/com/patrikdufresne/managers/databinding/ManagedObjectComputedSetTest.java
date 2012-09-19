@@ -24,8 +24,87 @@ import com.patrikdufresne.managers.MockEntity;
 @RunWith(DatabindingClassRunner.class)
 public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 
+	/**
+	 * Check if adding a listener without calling the get function will generate
+	 * events.
+	 */
 	@Test
-	public void AddObjectUpdatesSet() {
+	public void addListener_ToFilteredSetWithoutCallingGet_ExpectEvents() {
+
+		// Add entities
+		MockEntity entity1 = addMockEntity(getManagers(), "a");
+		MockEntity entity2 = addMockEntity(getManagers(), "b");
+		MockEntity entity3 = addMockEntity(getManagers(), "");
+		MockEntity entity4 = addMockEntity(getManagers(), "c");
+
+		// Create the observable set
+		IObservableSet set = new ManagedObjectComputedSet(getManagers(),
+				MockEntity.class) {
+			@Override
+			protected Collection doList() throws ManagerException {
+				List list = new ArrayList(super.doList());
+				Iterator iter = list.iterator();
+				while (iter.hasNext()) {
+					MockEntity obj = (MockEntity) iter.next();
+					if (obj.getName() == null || obj.getName().isEmpty()) {
+						iter.remove();
+					}
+				}
+				return list;
+			}
+
+			@Override
+			protected boolean doSelect(Object element) {
+				return ((MockEntity) element).getName() != null
+						&& !((MockEntity) element).getName().isEmpty();
+			}
+		};
+		ChangeListenerCounter listener = new ChangeListenerCounter();
+		set.addChangeListener(listener);
+		set.addSetChangeListener(listener);
+
+		// Add another entity should fire event
+		MockEntity entity5 = addMockEntity(getManagers(), "");
+		MockEntity entity6 = addMockEntity(getManagers(), "d");
+		MockEntity entity7 = addMockEntity(getManagers(), "");
+		assertEquals(1, listener.getSetChangeEvents().size());
+		SetDiff diff = listener.getSetChangeEvents().get(0).diff;
+		assertEquals(1, diff.getAdditions().size());
+		assertEquals(0, diff.getRemovals().size());
+		assertTrue(diff.getAdditions().contains(entity6));
+
+	}
+
+	/**
+	 * Check if adding a listener without calling the get function will generate
+	 * events.
+	 */
+	@Test
+	public void addListener_WithoutCallingGet_ExpectEvents() {
+
+		// Add entities
+		MockEntity entity1 = addMockEntity(getManagers());
+		MockEntity entity2 = addMockEntity(getManagers());
+
+		// Create the observable set
+		IObservableSet set = new ManagedObjectComputedSet(getManagers(),
+				MockEntity.class);
+		ChangeListenerCounter listener = new ChangeListenerCounter();
+		set.addChangeListener(listener);
+		set.addSetChangeListener(listener);
+
+		// Add another entity should fire event
+		MockEntity entity3 = addMockEntity(getManagers());
+		assertEquals(1, listener.getSetChangeEvents().size());
+		SetDiff diff = listener.getSetChangeEvents().get(0).diff;
+		assertEquals(1, diff.getAdditions().size());
+		assertEquals(0, diff.getRemovals().size());
+		assertTrue(diff.getAdditions().contains(entity3));
+
+	}
+
+	@Test
+	public void addObject_UpdatesSet() {
 
 		// Create the observable set
 		ChangeListenerCounter listener = new ChangeListenerCounter();
@@ -53,45 +132,7 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 	}
 
 	@Test
-	public void RemoveObjectUpdatesSet() throws ManagerException {
-
-		// Create observable set
-		ChangeListenerCounter listener = new ChangeListenerCounter();
-		IObservableSet set = new ManagedObjectComputedSet(getManagers(),
-				MockEntity.class);
-		set.addChangeListener(listener);
-		set.addSetChangeListener(listener);
-		assertTrue(set.isEmpty());
-
-		// Add entities
-		MockEntity entity1 = addMockEntity(getManagers());
-		MockEntity entity2 = addMockEntity(getManagers());
-		MockEntity entity3 = addMockEntity(getManagers());
-		assertEquals(3, set.size());
-		assertTrue(set.contains(entity1));
-		assertTrue(set.contains(entity2));
-		assertTrue(set.contains(entity3));
-		listener.clear();
-
-		// Remove entity
-		getManagers().getMockEntityManager().remove(Arrays.asList(entity1));
-
-		// Check observable set content
-		assertEquals(2, set.size());
-		assertTrue(set.contains(entity2));
-		assertTrue(set.contains(entity3));
-
-		// Check listener
-		assertEquals(1, listener.getChangeEvents().size());
-		assertEquals(1, listener.getSetChangeEvents().size());
-		SetDiff diff = listener.getSetChangeEvents().get(0).diff;
-		assertEquals(0, diff.getAdditions().size());
-		assertEquals(1, diff.getRemovals().size());
-		assertTrue(diff.getRemovals().contains(entity1));
-	}
-
-	@Test
-	public void AddRemoveUpdateObject_UpdatesFilteredSet()
+	public void addRemoveUpdateObject_WithFilteredSet_UpdateSet()
 			throws ManagerException {
 
 		// Create entities
@@ -150,7 +191,8 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 		entity1.setName("");
 		entity4.setName("4");
 		entity5.setName("5");
-		getManagers().updateAll(Arrays.asList(entity1, entity2, entity4, entity5));
+		getManagers().updateAll(
+				Arrays.asList(entity1, entity2, entity4, entity5));
 		assertEquals(5, set.size());
 		assertTrue(set.contains(entity2));
 		assertTrue(set.contains(entity3));
@@ -166,8 +208,7 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 		assertTrue(diff3.getAdditions().contains(entity5));
 		assertTrue(diff3.getRemovals().contains(entity1));
 		listener.clear();
-		
-		
+
 		// Remove entities
 		getManagers().removeAll(Arrays.asList(entity1, entity2, entity3));
 		assertEquals(3, set.size());
@@ -181,12 +222,50 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 		assertEquals(2, diff4.getRemovals().size());
 		assertTrue(diff4.getRemovals().contains(entity2));
 		assertTrue(diff4.getRemovals().contains(entity3));
-		
 
 	}
 
 	@Test
-	public void UpdateDependencies_UpdatesFilteredSet() throws ManagerException {
+	public void removeObject_UpdatesSet() throws ManagerException {
+
+		// Create observable set
+		ChangeListenerCounter listener = new ChangeListenerCounter();
+		IObservableSet set = new ManagedObjectComputedSet(getManagers(),
+				MockEntity.class);
+		set.addChangeListener(listener);
+		set.addSetChangeListener(listener);
+		assertTrue(set.isEmpty());
+
+		// Add entities
+		MockEntity entity1 = addMockEntity(getManagers());
+		MockEntity entity2 = addMockEntity(getManagers());
+		MockEntity entity3 = addMockEntity(getManagers());
+		assertEquals(3, set.size());
+		assertTrue(set.contains(entity1));
+		assertTrue(set.contains(entity2));
+		assertTrue(set.contains(entity3));
+		listener.clear();
+
+		// Remove entity
+		getManagers().getMockEntityManager().remove(Arrays.asList(entity1));
+
+		// Check observable set content
+		assertEquals(2, set.size());
+		assertTrue(set.contains(entity2));
+		assertTrue(set.contains(entity3));
+
+		// Check listener
+		assertEquals(1, listener.getChangeEvents().size());
+		assertEquals(1, listener.getSetChangeEvents().size());
+		SetDiff diff = listener.getSetChangeEvents().get(0).diff;
+		assertEquals(0, diff.getAdditions().size());
+		assertEquals(1, diff.getRemovals().size());
+		assertTrue(diff.getRemovals().contains(entity1));
+	}
+
+	@Test
+	public void updateDependencies_WithFilteredSet_UpdatesSet()
+			throws ManagerException {
 
 		final WritableValue pattern = new WritableValue("[0-9]", String.class);
 
@@ -216,19 +295,19 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 				return list;
 			}
 
-			protected String getPattern() {
-				if (pattern.getValue() instanceof String) {
-					return (String) pattern.getValue();
-				}
-				return null;
-			}
-
 			@Override
 			protected boolean doSelect(Object element) {
 				if (getPattern() == null)
 					return false;
 				return Pattern.compile(getPattern())
 						.matcher(((MockEntity) element).getName()).find();
+			}
+
+			protected String getPattern() {
+				if (pattern.getValue() instanceof String) {
+					return (String) pattern.getValue();
+				}
+				return null;
 			}
 
 		};

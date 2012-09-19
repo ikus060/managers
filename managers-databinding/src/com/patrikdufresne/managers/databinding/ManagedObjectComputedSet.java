@@ -248,11 +248,17 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	@Override
 	public synchronized void addChangeListener(IChangeListener listener) {
 		super.addChangeListener(listener);
+		// If somebody is listening, we need to make sure we attach our own
+		// listeners
+		computeSetForListeners();
 	}
 
 	@Override
 	public synchronized void addSetChangeListener(ISetChangeListener listener) {
 		super.addSetChangeListener(listener);
+		// If somebody is listening, we need to make sure we attach our own
+		// listeners
+		computeSetForListeners();
 	}
 
 	/**
@@ -261,6 +267,28 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	@Override
 	public void clear() {
 		throw new UnsupportedOperationException();
+	}
+
+	private void computeSetForListeners() {
+		// Some clients just add a listener and expect to get notified even if
+		// they never called getValue(), so we have to call getValue() ourselves
+		// here to be sure. Need to be careful about realms though, this method
+		// can be called outside of our realm.
+		// See also bug 198211. If a client calls this outside of our realm,
+		// they may receive change notifications before the runnable below has
+		// been executed. It is their job to figure out what to do with those
+		// notifications.
+		getRealm().exec(new Runnable() {
+			public void run() {
+				if (dirty) {
+					// We are not currently listening.
+					// But someone is listening for changes. Call getValue()
+					// to make sure we start listening to the observables we
+					// depend on.
+					getSet();
+				}
+			}
+		});
 	}
 
 	/**
@@ -283,7 +311,7 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 
 		if (this.dirty) {
 
-			checkListening();
+			startListening();
 
 			try {
 				Collection rawData = doList();
@@ -418,6 +446,9 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 
 			makeStale();
 
+			// The computed set is dirty and need to be recompute, then there is
+			// no need to listen to dependencies again. The next call to
+			// doGetSet will startListener again.
 			stopListening();
 
 			// copy the old set
@@ -560,25 +591,6 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	public String toString() {
 		getterCalled();
 		return "ManagerObservableCollection [" + getWrappedSet().toString() + "]"; //$NON-NLS-1$ //$NON-NLS-2$
-	}
-
-	/** True if the listener is added */
-	private boolean listenerAdded;
-
-	/**
-	 * 
-	 */
-	protected void firstListenerAdded() {
-		super.firstListenerAdded();
-		checkListening();
-	}
-
-	protected void checkListening() {
-		// A listener is added, let add our listener too.
-		if (!this.listenerAdded) {
-			startListening();
-			this.listenerAdded = true;
-		}
 	}
 
 }
