@@ -459,28 +459,34 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 		if ((event.type & ManagerEvent.UPDATE) != 0) {
 			for (Object element : event.objects) {
 				if (doSelect(element)) {
-					additions.add(element);
-					this.cachedSet.add(element);
+					if (this.cachedSet.add(element)) {
+						additions.add(element);
+					}
 				} else {
-					removals.add(element);
-					this.cachedSet.remove(element);
+					if (this.cachedSet.remove(element)) {
+						removals.add(element);
+					}
 				}
 			}
-		}
-		if ((event.type & ManagerEvent.ADD) != 0) {
+		} else if ((event.type & ManagerEvent.ADD) != 0) {
 			for (Object element : event.objects) {
 				if (doSelect(element)) {
-					additions.add(element);
-					this.cachedSet.add(element);
+					if (this.cachedSet.add(element)) {
+						additions.add(element);
+					}
+				}
+			}
+		} else if ((event.type & ManagerEvent.REMOVE) != 0) {
+			for (Object element : event.objects) {
+				if (this.cachedSet.remove(element)) {
+					removals.add(element);
 				}
 			}
 		}
-		if ((event.type & ManagerEvent.REMOVE) != 0) {
-			removals.addAll(event.objects);
-			this.cachedSet.removeAll(event.objects);
-		}
 		// Fire change
-		fireSetChange(Diffs.createSetDiff(additions, removals));
+		if (additions.size() != 0 || removals.size() != 0) {
+			fireSetChange(Diffs.createSetDiff(additions, removals));
+		}
 	}
 
 	/**
