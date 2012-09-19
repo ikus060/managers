@@ -470,24 +470,46 @@ public abstract class Managers {
 
 		Object result = null;
 		if (ManagerContext.getDefaultSession() == null) {
-			Session session = this.getSessionFactory().getCurrentSession();
-			session.beginTransaction();
+			Session session;
+			// Opening a new session and starting a transaction may throw
+			// exceptions, make sure to run it inside a try catch to properly
+			// handle the error.
+			try {
+				session = this.getSessionFactory().getCurrentSession();
+			} catch (Throwable e) {
+				// The session is not created, re-throw the exception
+				throw new ManagerException("can't open a new session", e);
+			}
+			try {
+				session.beginTransaction();
+			} catch (Throwable e) {
+				// Can't start a new transaction, release session so next time a
+				// new session will be created.
+				session.close();
+				throw new ManagerException("can't begin a transaction", e);
+			}
+			// Sets the default session to use within this manager context.
 			ManagerContext.setDefaultSession(session);
 			ManagerContext.getDefault().getEventTable().clear();
 			try {
+				// Run the runnable
 				if (runnable instanceof Query) {
 					result = ((Query) runnable).run();
 				} else {
 					((Exec) runnable).run();
 				}
-				// Commit to database
+				// Commit to database & close session
 				ManagerContext.getDefault().getSession().getTransaction()
 						.commit();
-			} catch (HibernateException e) {
+			} catch (Throwable e) {
+				// Error occurred within the transaction/runnable. Rollback any
+				// modification and close the session so next run will create a
+				// new session.
 				ManagerContext.getDefault().getSession().getTransaction()
 						.rollback();
 				throw new ManagerException(e);
 			} finally {
+				// Unset the default session
 				ManagerContext.setDefaultSession(null);
 			}
 			// Notify observers
