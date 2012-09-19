@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -40,9 +41,9 @@ import com.patrikdufresne.managers.Managers;
  * Notice : event is this class implement the {@link IManagerObserver}
  * interface, the client should not attach the object to a manager.
  * <p>
- * Subclasses may override the {@link #doList()} function to query the database
- * differently. When doing so, it's also recommended to implement doSelect to
- * filter the elements received within the events.
+ * Subclasses may override the {@link #doIterator()} function to query the
+ * database differently. When doing so, it's also recommended to implement
+ * doSelect to filter the elements received within the events.
  * <p>
  * This implementation is an adaptation of the {@link ComputedSet} class.
  * 
@@ -314,11 +315,10 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 			startListening();
 
 			try {
-				Collection rawData = doList();
-				if (rawData instanceof Set) {
-					this.cachedSet = (Set) rawData;
-				} else {
-					this.cachedSet = new HashSet(rawData);
+				this.cachedSet = new HashSet();
+				Iterator iter = doIterator();
+				while (iter.hasNext()) {
+					this.cachedSet.add(iter.next());
 				}
 			} catch (ManagerException e) {
 				Policy.getLog()
@@ -342,8 +342,9 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	 * 
 	 * @return a collection
 	 */
-	protected Collection doList() throws ManagerException {
-		return getManagers().getManagerForClass(this.elementType).list();
+	protected Iterator doIterator() throws ManagerException {
+		return getManagers().getManagerForClass(this.elementType).list()
+				.iterator();
 	}
 
 	/**
@@ -351,7 +352,7 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	 * return true.
 	 * <p>
 	 * Subclasses should override this function if it's override
-	 * {@link #doList()}.
+	 * {@link #doIterator()}.
 	 * 
 	 * @param element
 	 *            the element to check

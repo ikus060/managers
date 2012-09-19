@@ -3,13 +3,12 @@ package com.patrikdufresne.managers.databinding;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.commons.collections.Predicate;
+import org.apache.commons.collections.iterators.FilterIterator;
 import org.eclipse.core.databinding.observable.IObservable;
 import org.eclipse.core.databinding.observable.set.IObservableSet;
 import org.eclipse.core.databinding.observable.set.SetDiff;
@@ -41,16 +40,13 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 		IObservableSet set = new ManagedObjectComputedSet(getManagers(),
 				MockEntity.class) {
 			@Override
-			protected Collection doList() throws ManagerException {
-				List list = new ArrayList(super.doList());
-				Iterator iter = list.iterator();
-				while (iter.hasNext()) {
-					MockEntity obj = (MockEntity) iter.next();
-					if (obj.getName() == null || obj.getName().isEmpty()) {
-						iter.remove();
+			protected Iterator doIterator() throws ManagerException {
+				return new FilterIterator(super.doIterator(), new Predicate() {
+					@Override
+					public boolean evaluate(Object arg0) {
+						return doSelect(arg0);
 					}
-				}
-				return list;
+				});
 			}
 
 			@Override
@@ -146,16 +142,13 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 		IObservableSet set = new ManagedObjectComputedSet(getManagers(),
 				MockEntity.class) {
 			@Override
-			protected Collection doList() throws ManagerException {
-				List list = new ArrayList(super.doList());
-				Iterator iter = list.iterator();
-				while (iter.hasNext()) {
-					MockEntity obj = (MockEntity) iter.next();
-					if (obj.getName() == null || obj.getName().isEmpty()) {
-						iter.remove();
+			protected Iterator doIterator() throws ManagerException {
+				return new FilterIterator(super.doIterator(), new Predicate() {
+					@Override
+					public boolean evaluate(Object arg0) {
+						return doSelect(arg0);
 					}
-				}
-				return list;
+				});
 			}
 
 			@Override
@@ -283,16 +276,13 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 				MockEntity.class, new IObservable[] { pattern }) {
 
 			@Override
-			protected Collection doList() throws ManagerException {
-				List list = new ArrayList(super.doList());
-				Iterator iter = list.iterator();
-				while (iter.hasNext()) {
-					Object obj = iter.next();
-					if (!doSelect(obj)) {
-						iter.remove();
+			protected Iterator doIterator() throws ManagerException {
+				return new FilterIterator(super.doIterator(), new Predicate() {
+					@Override
+					public boolean evaluate(Object arg0) {
+						return doSelect(arg0);
 					}
-				}
-				return list;
+				});
 			}
 
 			@Override
@@ -353,16 +343,13 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 		IObservableSet set = new ManagedObjectComputedSet(getManagers(),
 				MockEntity.class, new IObservable[] { pattern }) {
 			@Override
-			protected Collection doList() throws ManagerException {
-				List list = new ArrayList(super.doList());
-				Iterator iter = list.iterator();
-				while (iter.hasNext()) {
-					Object obj = iter.next();
-					if (!doSelect(obj)) {
-						iter.remove();
+			protected Iterator doIterator() throws ManagerException {
+				return new FilterIterator(super.doIterator(), new Predicate() {
+					@Override
+					public boolean evaluate(Object arg0) {
+						return doSelect(arg0);
 					}
-				}
-				return list;
+				});
 			}
 
 			@Override
