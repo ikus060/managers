@@ -16,6 +16,11 @@ import com.patrikdufresne.managers.ManagedObject;
 @Entity
 public class MockEntity extends ManagedObject {
 
+	@Override
+	public String toString() {
+		return "MockEntity [name=" + name + "]";
+	}
+
 	/**
 	 * Name property key
 	 */

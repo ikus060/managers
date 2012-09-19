@@ -6,7 +6,10 @@ package com.patrikdufresne.managers.databinding;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.eclipse.core.databinding.observable.ChangeEvent;
@@ -25,10 +28,11 @@ import org.eclipse.core.databinding.util.Policy;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 
-import com.patrikdufresne.managers.IManager;
 import com.patrikdufresne.managers.IManagerObserver;
+import com.patrikdufresne.managers.ManagedObject;
 import com.patrikdufresne.managers.ManagerEvent;
 import com.patrikdufresne.managers.ManagerException;
+import com.patrikdufresne.managers.Managers;
 
 /**
  * This class may be used to observe the a specific manager.
@@ -46,8 +50,7 @@ import com.patrikdufresne.managers.ManagerException;
  * 
  */
 @SuppressWarnings("rawtypes")
-public class ManagedObjectComputedSet extends AbstractObservableSet implements
-		IManagerObserver {
+public class ManagedObjectComputedSet extends AbstractObservableSet {
 
 	/**
 	 * Inner class that implements interfaces that we don't want to expose as
@@ -56,29 +59,32 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 	 * and number of classes.
 	 * 
 	 * <p>
-	 * The Runnable calls calculate and stores the result in cachedSet.
-	 * </p>
-	 * 
-	 * <p>
-	 * The IChangeListener stores each observable in the dependencies list. This
-	 * is registered as the listener when calling ObservableTracker, to detect
-	 * every observable that is used by computeValue.
-	 * </p>
-	 * 
-	 * <p>
 	 * The IChangeListener is attached to every dependency.
 	 * </p>
 	 * 
+	 * <p>
+	 * IManagerObserver is attache to managers.
+	 * </p>
+	 * 
 	 */
-	private class PrivateInterface implements Runnable, IChangeListener,
-			IStaleListener {
-		public PrivateInterface() {
-			// Nothing to do
-		}
+	private class PrivateInterface implements IChangeListener, IStaleListener,
+			IManagerObserver {
 
 		@Override
 		public void handleChange(ChangeEvent event) {
 			makeDirty();
+		}
+
+		@Override
+		public void handleManagerEvent(final ManagerEvent event) {
+			if (!isDisposed()) {
+				getRealm().exec(new Runnable() {
+					@Override
+					public void run() {
+						notifyIfChanged(event);
+					}
+				});
+			}
 		}
 
 		@Override
@@ -87,40 +93,114 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 				makeStale();
 		}
 
-		@Override
-		public void run() {
-			ManagedObjectComputedSet.this.cachedSet = calculate();
-			if (ManagedObjectComputedSet.this.cachedSet == null)
-				ManagedObjectComputedSet.this.cachedSet = Collections.EMPTY_SET;
-		}
 	}
 
-	Set<Object> cachedSet = new HashSet<Object>();
+	/**
+	 * Return a map with the default events to listen to.
+	 * 
+	 * @param elementType
+	 *            the element type
+	 * @return the map
+	 */
+	private static Map<Class, Integer> defaultEvents(
+			Class<? extends ManagedObject> elementType) {
+		Map<Class, Integer> map = new HashMap<Class, Integer>();
+		map.put(elementType, Integer.valueOf(ManagerEvent.ALL));
+		return map;
+	}
 
+	/** Cached set */
+	Set cachedSet = new HashSet();
+
+	/** List of observable dependencies. */
 	private IObservable[] dependencies = new IObservable[0];
 
+	/** True if dirty */
 	boolean dirty = true;
 
-	/**
-	 * The adapted manager.
-	 */
-	private IManager manager;
+	/** The element type of this observable */
+	private Class<? extends ManagedObject> elementType;
+
+	/** List of manager event to listen to */
+	private Map<Class, Integer> events;
+
+	private Managers managers;
 
 	private PrivateInterface privateInterface = new PrivateInterface();
 
 	private boolean stale = false;
 
 	/**
+	 * Default constructor to create an observable computed set for the managers
+	 * and element type specified.
+	 * <p>
+	 * This computed set will listen to default manager events and has no
+	 * dependencies.
+	 * 
+	 * @param managers
+	 *            the managers
+	 * @param elementType
+	 *            the element type
+	 */
+	public ManagedObjectComputedSet(Managers managers,
+			Class<? extends ManagedObject> elementType) {
+		this(managers, elementType, defaultEvents(elementType), null);
+	}
+
+	/**
+	 * Create an observable set for the managers and element type specified.
+	 * This computed set will listen to default manager events.
+	 * 
+	 * @param managers
+	 *            the managers
+	 * @param elementType
+	 *            the element type
+	 * @param dependencies
+	 *            list of observable dependencies or null
+	 * 
+	 */
+	public ManagedObjectComputedSet(Managers managers,
+			Class<? extends ManagedObject> elementType,
+			IObservable[] dependencies) {
+		this(managers, elementType, defaultEvents(elementType), dependencies);
+	}
+
+	/**
+	 * Create an observable set for the managers and element type specified.
+	 * This computed set will listen to the <code>events</code> specified.
+	 * 
+	 * 
+	 * @param managers
+	 *            the managers
+	 * @param elementType
+	 *            the element type
+	 * @param events
+	 *            the list of manager event to listen to
+	 * 
+	 */
+	public ManagedObjectComputedSet(Managers managers,
+			Class<? extends ManagedObject> elementType,
+			Map<Class, Integer> events) {
+		this(managers, elementType, events, null);
+	}
+
+	/**
 	 * Create a new observable list from a manager.
 	 * 
-	 * @param manager
-	 *            the object manager to adapt.
+	 * @param managers
+	 *            the managers to use
+	 * @param elementType
+	 *            The element type of this observable
+	 * @param dependencies
+	 *            the list of observable dependencies.
 	 * 
 	 * @throws NullPointerException
 	 *             is the argument is null
 	 */
-	public ManagedObjectComputedSet(IManager manager) {
-		this(Realm.getDefault(), manager);
+	public ManagedObjectComputedSet(Managers managers,
+			Class<? extends ManagedObject> elementType,
+			Map<Class, Integer> events, IObservable[] dependencies) {
+		this(Realm.getDefault(), managers, elementType, events, dependencies);
 	}
 
 	/**
@@ -128,18 +208,25 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 	 * 
 	 * @param realm
 	 *            the realm
-	 * @param manager
+	 * @param managers
+	 *            the managers to use
+	 * @param dependencies
+	 *            the list of observable dependencies.
 	 * @param cache
 	 */
-	public ManagedObjectComputedSet(Realm realm, IManager manager) {
+	public ManagedObjectComputedSet(Realm realm, Managers managers,
+			Class<? extends ManagedObject> elementType,
+			Map<Class, Integer> events, IObservable[] dependencies) {
 		super(realm);
-		if (manager == null) {
+		if (managers == null || elementType == null) {
 			throw new NullPointerException();
 		}
 		ObservableTracker.observableCreated(this);
-		this.manager = manager;
-		// Attach listener
-		attachManagerObserver();
+
+		this.managers = managers;
+		this.elementType = elementType;
+		this.events = events;
+		this.dependencies = dependencies;
 	}
 
 	/**
@@ -161,51 +248,11 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 	@Override
 	public synchronized void addChangeListener(IChangeListener listener) {
 		super.addChangeListener(listener);
-		// If somebody is listening, we need to make sure we attach our own
-		// listeners
-		computeSetForListeners();
 	}
 
 	@Override
 	public synchronized void addSetChangeListener(ISetChangeListener listener) {
 		super.addSetChangeListener(listener);
-		// If somebody is listening, we need to make sure we attach our own
-		// listeners
-		computeSetForListeners();
-	}
-
-	/**
-	 * This function is called during the construction of this object to attach
-	 * listener to the manager. By default, it attach it self on ADD and REMOVE
-	 * events.
-	 */
-	protected void attachManagerObserver() {
-		this.manager.addObserver(ManagerEvent.ADD, this);
-		this.manager.addObserver(ManagerEvent.REMOVE, this);
-	}
-
-	/**
-	 * Subclasses must override this method to calculate the set contents. Any
-	 * dependencies used to calculate the set must be {@link IObservable}, and
-	 * implementers must use one of the interface methods tagged TrackedGetter
-	 * for ComputedSet to recognize it as a dependency.
-	 * 
-	 * @return the object's set.
-	 */
-	protected Set calculate() {
-		try {
-			Collection rawData = doList();
-			if (rawData instanceof Set) {
-				return (Set) rawData;
-			}
-			Set set = new HashSet(rawData);
-			return set;
-		} catch (ManagerException e) {
-			Policy.getLog().log(
-					new Status(IStatus.ERROR, Policy.JFACE_DATABINDING, 0,
-							"Error querying the list from the manager.", e)); //$NON-NLS-1$
-			return Collections.EMPTY_SET;
-		}
 	}
 
 	/**
@@ -216,77 +263,42 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 		throw new UnsupportedOperationException();
 	}
 
-	private void computeSetForListeners() {
-		// Some clients just add a listener and expect to get notified even if
-		// they never called getValue(), so we have to call getValue() ourselves
-		// here to be sure. Need to be careful about realms though, this method
-		// can be called outside of our realm.
-		// See also bug 198211. If a client calls this outside of our realm,
-		// they may receive change notifications before the runnable below has
-		// been executed. It is their job to figure out what to do with those
-		// notifications.
-		getRealm().exec(new Runnable() {
-			@Override
-			public void run() {
-				if (ManagedObjectComputedSet.this.dependencies == null) {
-					// We are not currently listening.
-					// But someone is listening for changes. Call getValue()
-					// to make sure we start listening to the observables we
-					// depend on.
-					getSet();
-				}
-			}
-		});
-	}
-
 	/**
-	 * This function is called during the disposale of this object to detach it
-	 * self from the manager.
+	 * This implementation remove listener.
 	 */
-	protected void detachManagerObserver() {
-		this.manager.removeObserver(ManagerEvent.ADD, this);
-		this.manager.removeObserver(ManagerEvent.REMOVE, this);
-	}
-
 	@Override
 	public synchronized void dispose() {
 		try {
 			stopListening();
 			lastListenerRemoved();
-			detachManagerObserver();
-			this.manager = null;
+			this.managers = null;
+			this.dependencies = null;
+			this.privateInterface = null;
 		} finally {
 			super.dispose();
 		}
 	}
 
 	final Set doGetSet() {
+
 		if (this.dirty) {
-			// This line will do the following:
-			// - Run the calculate method
-			// - While doing so, add any observable that is touched to the
-			// dependencies list
-			IObservable[] newDependencies = ObservableTracker.runAndMonitor(
-					this.privateInterface, this.privateInterface, null);
 
-			// If any dependencies are stale, a stale event will be fired here
-			// even if we were already stale before recomputing. This is in case
-			// clients assume that a set change is indicative of non-staleness.
-			this.stale = false;
-			for (int i = 0; i < newDependencies.length; i++) {
-				if (newDependencies[i].isStale()) {
-					makeStale();
-					break;
+			checkListening();
+
+			try {
+				Collection rawData = doList();
+				if (rawData instanceof Set) {
+					this.cachedSet = (Set) rawData;
+				} else {
+					this.cachedSet = new HashSet(rawData);
 				}
+			} catch (ManagerException e) {
+				Policy.getLog()
+						.log(new Status(IStatus.ERROR,
+								Policy.JFACE_DATABINDING, 0,
+								"Error querying the list from the manager.", e)); //$NON-NLS-1$
+				this.cachedSet = Collections.EMPTY_SET;
 			}
-
-			if (!this.stale) {
-				for (int i = 0; i < newDependencies.length; i++) {
-					newDependencies[i].addStaleListener(this.privateInterface);
-				}
-			}
-
-			this.dependencies = newDependencies;
 
 			this.dirty = false;
 		}
@@ -296,11 +308,14 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 
 	/**
 	 * Query the database.
+	 * <p>
+	 * Sub classes may override this function to query the database using
+	 * something else then list().
 	 * 
-	 * @return listof object
+	 * @return a collection
 	 */
 	protected Collection doList() throws ManagerException {
-		return this.manager.list();
+		return getManagers().getManagerForClass(this.elementType).list();
 	}
 
 	/**
@@ -333,11 +348,18 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 		if (getClass() != obj.getClass())
 			return false;
 		ManagedObjectComputedSet other = (ManagedObjectComputedSet) obj;
-		if (this.manager == null) {
-			if (other.manager != null)
+		if (this.managers == null) {
+			if (other.managers != null)
 				return false;
-		} else if (!this.manager.equals(other.manager))
+		} else if (!this.managers.equals(other.managers))
 			return false;
+
+		if (this.elementType == null) {
+			if (other.elementType != null)
+				return false;
+		} else if (!this.elementType.equals(other.elementType))
+			return false;
+
 		return true;
 	}
 
@@ -346,16 +368,16 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 	 */
 	@Override
 	public Object getElementType() {
-		return this.manager.objectClass();
+		return this.elementType;
 	}
 
 	/**
-	 * Return the adapted manager.
+	 * Return the managers
 	 * 
-	 * @return the manager.
+	 * @return
 	 */
-	public IManager getManager() {
-		return this.manager;
+	public Managers getManagers() {
+		return this.managers;
 	}
 
 	final Set getSet() {
@@ -374,58 +396,12 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 		return doGetSet();
 	}
 
-	/**
-	 * This impleentation handle the manager event to notify any listener of
-	 * this observable list of the event.
-	 */
-	@Override
-	public void handleManagerEvent(final ManagerEvent event) {
-		if (!isDisposed()) {
-			getRealm().exec(new Runnable() {
-				@Override
-				public void run() {
-					notifyIfChanged(event);
-				}
-			});
-		}
-	}
-
-	protected void notifyIfChanged(ManagerEvent event) {
-		Set<Object> additions = new HashSet<Object>();
-		Set<Object> removals = new HashSet<Object>();
-		if ((event.type & ManagerEvent.UPDATE) != 0) {
-			for (Object element : event.objects) {
-				if (doSelect(element)) {
-					additions.add(element);
-					this.cachedSet.add(element);
-				} else {
-					removals.add(element);
-					this.cachedSet.remove(element);
-				}
-			}
-		}
-		if ((event.type & ManagerEvent.ADD) != 0) {
-			for (Object element : event.objects) {
-				if (doSelect(element)) {
-					additions.add(element);
-					this.cachedSet.add(element);
-				}
-			}
-		}
-		if ((event.type & ManagerEvent.REMOVE) != 0) {
-			removals.addAll(event.objects);
-			this.cachedSet.removeAll(event.objects);
-		}
-		// Fire change
-		fireSetChange(Diffs.createSetDiff(additions, removals));
-	}
-
 	@Override
 	public int hashCode() {
 		getterCalled();
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + this.manager.hashCode();
+		result = prime * result + this.managers.hashCode();
 		return result;
 	}
 
@@ -477,6 +453,36 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 		}
 	}
 
+	protected void notifyIfChanged(ManagerEvent event) {
+		Set<Object> additions = new HashSet<Object>();
+		Set<Object> removals = new HashSet<Object>();
+		if ((event.type & ManagerEvent.UPDATE) != 0) {
+			for (Object element : event.objects) {
+				if (doSelect(element)) {
+					additions.add(element);
+					this.cachedSet.add(element);
+				} else {
+					removals.add(element);
+					this.cachedSet.remove(element);
+				}
+			}
+		}
+		if ((event.type & ManagerEvent.ADD) != 0) {
+			for (Object element : event.objects) {
+				if (doSelect(element)) {
+					additions.add(element);
+					this.cachedSet.add(element);
+				}
+			}
+		}
+		if ((event.type & ManagerEvent.REMOVE) != 0) {
+			removals.addAll(event.objects);
+			this.cachedSet.removeAll(event.objects);
+		}
+		// Fire change
+		fireSetChange(Diffs.createSetDiff(additions, removals));
+	}
+
 	/**
 	 * This implementation throw an exception.
 	 */
@@ -501,15 +507,46 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 		throw new UnsupportedOperationException();
 	}
 
-	private void stopListening() {
+	/**
+	 * 
+	 * Add listener to dependencies
+	 */
+	protected void startListening() {
 		if (this.dependencies != null) {
 			for (int i = 0; i < this.dependencies.length; i++) {
 				IObservable observable = this.dependencies[i];
+				observable.addChangeListener(this.privateInterface);
+				observable.addStaleListener(this.privateInterface);
+			}
+			this.dependencies = null;
+		}
 
+		if (this.events != null) {
+			for (Entry<Class, Integer> e : this.events.entrySet()) {
+				getManagers().addObserver(e.getValue().intValue(),
+						(Class) e.getKey(), this.privateInterface);
+			}
+		}
+	}
+
+	/**
+	 * Remove listener from dependencies.
+	 */
+	protected void stopListening() {
+		if (this.dependencies != null) {
+			for (int i = 0; i < this.dependencies.length; i++) {
+				IObservable observable = this.dependencies[i];
 				observable.removeChangeListener(this.privateInterface);
 				observable.removeStaleListener(this.privateInterface);
 			}
 			this.dependencies = null;
+		}
+
+		if (this.events != null) {
+			for (Entry<Class, Integer> e : this.events.entrySet()) {
+				getManagers().removeObserver(e.getValue().intValue(),
+						(Class) e.getKey(), this.privateInterface);
+			}
 		}
 	}
 
@@ -517,6 +554,25 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements
 	public String toString() {
 		getterCalled();
 		return "ManagerObservableCollection [" + getWrappedSet().toString() + "]"; //$NON-NLS-1$ //$NON-NLS-2$
+	}
+
+	/** True if the listener is added */
+	private boolean listenerAdded;
+
+	/**
+	 * 
+	 */
+	protected void firstListenerAdded() {
+		super.firstListenerAdded();
+		checkListening();
+	}
+
+	protected void checkListening() {
+		// A listener is added, let add our listener too.
+		if (!this.listenerAdded) {
+			startListening();
+			this.listenerAdded = true;
+		}
 	}
 
 }

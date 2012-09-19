@@ -57,7 +57,12 @@ public abstract class AbstractManagerTest {
 	}
 
 	public static MockEntity addMockEntity(MockManagers managers) {
+		return addMockEntity(managers, "");
+	}
+
+	public static MockEntity addMockEntity(MockManagers managers, String name) {
 		MockEntity entity = new MockEntity();
+		entity.setName(name);
 		try {
 			managers.addAll(Arrays.asList(entity));
 		} catch (ManagerException e) {
