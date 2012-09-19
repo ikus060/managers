@@ -336,4 +336,109 @@ public class ManagedObjectComputedSetTest extends AbstractManagerTest {
 
 	}
 
+	@Test
+	public void addRemoveUpdateObject_WithDependenciesSet_UpdateSet()
+			throws ManagerException {
+
+		final WritableValue pattern = new WritableValue("[0-9]", String.class);
+
+		// Create entities
+		MockEntity entity1 = addMockEntity(getManagers(), "1");
+		MockEntity entity2 = addMockEntity(getManagers(), "2");
+		MockEntity entity3 = addMockEntity(getManagers(), "3");
+		MockEntity entity4 = addMockEntity(getManagers(), "");
+
+		// Create the observable set
+		ChangeListenerCounter listener = new ChangeListenerCounter();
+		IObservableSet set = new ManagedObjectComputedSet(getManagers(),
+				MockEntity.class, new IObservable[] { pattern }) {
+			@Override
+			protected Collection doList() throws ManagerException {
+				List list = new ArrayList(super.doList());
+				Iterator iter = list.iterator();
+				while (iter.hasNext()) {
+					Object obj = iter.next();
+					if (!doSelect(obj)) {
+						iter.remove();
+					}
+				}
+				return list;
+			}
+
+			@Override
+			protected boolean doSelect(Object element) {
+				if (getPattern() == null)
+					return false;
+				return Pattern.compile(getPattern())
+						.matcher(((MockEntity) element).getName()).find();
+			}
+
+			protected String getPattern() {
+				if (pattern.getValue() instanceof String) {
+					return (String) pattern.getValue();
+				}
+				return null;
+			}
+		};
+		set.addChangeListener(listener);
+		set.addSetChangeListener(listener);
+		assertEquals(3, set.size());
+		assertTrue(set.contains(entity1));
+		assertTrue(set.contains(entity2));
+		assertTrue(set.contains(entity3));
+
+		// Add an entity
+		MockEntity entity5 = addMockEntity(getManagers(), "");
+		MockEntity entity6 = addMockEntity(getManagers(), "6");
+		assertEquals(4, set.size());
+		assertTrue(set.contains(entity1));
+		assertTrue(set.contains(entity2));
+		assertTrue(set.contains(entity3));
+		assertTrue(set.contains(entity6));
+		assertEquals(1, listener.getChangeEvents().size());
+		assertEquals(1, listener.getSetChangeEvents().size());
+		SetDiff diff1 = listener.getSetChangeEvents().get(0).diff;
+		assertEquals(1, diff1.getAdditions().size());
+		assertEquals(0, diff1.getRemovals().size());
+		assertTrue(diff1.getAdditions().contains(entity6));
+		listener.clear();
+
+		// Update entity
+		entity1.setName("");
+		entity4.setName("4");
+		entity5.setName("5");
+		getManagers().updateAll(
+				Arrays.asList(entity1, entity2, entity4, entity5));
+		assertEquals(5, set.size());
+		assertTrue(set.contains(entity2));
+		assertTrue(set.contains(entity3));
+		assertTrue(set.contains(entity4));
+		assertTrue(set.contains(entity5));
+		assertTrue(set.contains(entity6));
+		assertEquals(1, listener.getChangeEvents().size());
+		assertEquals(1, listener.getSetChangeEvents().size());
+		SetDiff diff3 = listener.getSetChangeEvents().get(0).diff;
+		assertEquals(2, diff3.getAdditions().size());
+		assertEquals(1, diff3.getRemovals().size());
+		assertTrue(diff3.getAdditions().contains(entity4));
+		assertTrue(diff3.getAdditions().contains(entity5));
+		assertTrue(diff3.getRemovals().contains(entity1));
+		listener.clear();
+
+		// Remove entities
+		getManagers().removeAll(Arrays.asList(entity1, entity2, entity3));
+		assertEquals(3, set.size());
+		assertTrue(set.contains(entity4));
+		assertTrue(set.contains(entity5));
+		assertTrue(set.contains(entity6));
+		assertEquals(1, listener.getChangeEvents().size());
+		assertEquals(1, listener.getSetChangeEvents().size());
+		SetDiff diff4 = listener.getSetChangeEvents().get(0).diff;
+		assertEquals(0, diff4.getAdditions().size());
+		assertEquals(2, diff4.getRemovals().size());
+		assertTrue(diff4.getRemovals().contains(entity2));
+		assertTrue(diff4.getRemovals().contains(entity3));
+
+	}
+
 }

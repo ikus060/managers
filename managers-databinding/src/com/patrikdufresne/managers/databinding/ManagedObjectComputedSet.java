@@ -555,7 +555,6 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 				observable.addChangeListener(this.privateInterface);
 				observable.addStaleListener(this.privateInterface);
 			}
-			this.dependencies = null;
 		}
 
 		if (this.events != null) {
@@ -576,7 +575,6 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 				observable.removeChangeListener(this.privateInterface);
 				observable.removeStaleListener(this.privateInterface);
 			}
-			this.dependencies = null;
 		}
 
 		if (this.events != null) {
