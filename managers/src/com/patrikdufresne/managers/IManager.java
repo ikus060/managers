@@ -22,15 +22,6 @@ public interface IManager<T extends ManagedObject> {
 	public void add(Collection<? extends T> t) throws ManagerException;
 
 	/**
-	 * Add an observer to this manager that will notify when object are added,
-	 * updated or removed.
-	 * 
-	 * @param observer
-	 *            the observer to add.
-	 */
-	public void addObserver(int eventType, IManagerObserver observer);
-
-	/**
 	 * Add an observer to this manager that will be notify when object are added
 	 * updated or removed.
 	 * 
@@ -43,6 +34,24 @@ public interface IManager<T extends ManagedObject> {
 	 */
 	public void addObserver(int eventType, Class<?> cls,
 			IManagerObserver observer);
+
+	/**
+	 * Add an observer to this manager that will notify when object are added,
+	 * updated or removed.
+	 * 
+	 * @param observer
+	 *            the observer to add.
+	 */
+	public void addObserver(int eventType, IManagerObserver observer);
+
+	public T get(int id) throws ManagerException;
+
+	/**
+	 * Return the managers.
+	 * 
+	 * @return
+	 */
+	public Managers getManagers();
 
 	/**
 	 * List all records.
@@ -67,14 +76,6 @@ public interface IManager<T extends ManagedObject> {
 	public void remove(Collection<? extends T> t) throws ManagerException;
 
 	/**
-	 * Remove an observer from this manager.
-	 * 
-	 * @param observer
-	 *            the observer to remove.
-	 */
-	public void removeObserver(int eventType, IManagerObserver observer);
-
-	/**
 	 * Remove an observer.
 	 * 
 	 * @param eventType
@@ -83,6 +84,14 @@ public interface IManager<T extends ManagedObject> {
 	 */
 	public void removeObserver(int eventType, Class<?> cls,
 			IManagerObserver observer);
+
+	/**
+	 * Remove an observer from this manager.
+	 * 
+	 * @param observer
+	 *            the observer to remove.
+	 */
+	public void removeObserver(int eventType, IManagerObserver observer);
 
 	/**
 	 * Return the number of records.
@@ -98,7 +107,5 @@ public interface IManager<T extends ManagedObject> {
 	 *            the objects to update
 	 */
 	public void update(Collection<? extends T> t) throws ManagerException;
-
-	public T get(int id) throws ManagerException;
 
 }
