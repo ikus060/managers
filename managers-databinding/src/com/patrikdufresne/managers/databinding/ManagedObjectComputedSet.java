@@ -297,12 +297,15 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	 */
 	@Override
 	public synchronized void dispose() {
+		checkRealm();
 		try {
-			stopListening();
-			lastListenerRemoved();
-			this.managers = null;
-			this.dependencies = null;
-			this.privateInterface = null;
+			if(!isDisposed()) {
+				stopListening();
+				lastListenerRemoved();
+				this.managers = null;
+				this.dependencies = null;
+				this.privateInterface = null;
+			}
 		} finally {
 			super.dispose();
 		}
@@ -316,7 +319,7 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 
 			try {
 				this.cachedSet = new HashSet();
-				Iterator iter = doIterator();
+				Iterator iter = doList().iterator();
 				while (iter.hasNext()) {
 					this.cachedSet.add(iter.next());
 				}
@@ -342,9 +345,8 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	 * 
 	 * @return a collection
 	 */
-	protected Iterator doIterator() throws ManagerException {
-		return getManagers().getManagerForClass(this.elementType).list()
-				.iterator();
+	protected Collection doList() throws ManagerException {
+		return getManagers().getManagerForClass(this.elementType).list();
 	}
 
 	/**
