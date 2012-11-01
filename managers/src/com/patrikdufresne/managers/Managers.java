@@ -103,7 +103,7 @@ public abstract class Managers {
 				SessionFactoryImplementor sessionFactory,
 				SessionFactoryServiceRegistry serviceRegistry) {
 
-			CustomListener listener = new CustomListener(Managers.this);
+			CustomListener listener = new CustomListener();
 
 			EventListenerRegistry eventListenerRegistry = serviceRegistry
 					.getService(EventListenerRegistry.class);

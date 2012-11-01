@@ -41,9 +41,12 @@ public class ManagedObjectUtils {
 			}
 			if (origDescriptors[i].getReadMethod() != null
 					&& origDescriptors[i].getWriteMethod() != null) {
-				// Copy the property value.
-				Object value = readProperty(orig, origDescriptors[i]);
-				writeProperty(dest, origDescriptors[i], value);
+				// Copy the property value if it changed
+				Object newValue = readProperty(orig, origDescriptors[i]);
+				Object oldValue = readProperty(dest, origDescriptors[i]);
+				if (newValue != oldValue) {
+					writeProperty(dest, origDescriptors[i], newValue);
+				}
 			}
 		}
 

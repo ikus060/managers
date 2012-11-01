@@ -5,7 +5,6 @@ import java.beans.PropertyChangeSupport;
 import java.util.Date;
 
 import javax.persistence.Column;
-import javax.persistence.EntityListeners;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -47,9 +46,23 @@ public class ManagedObject implements java.io.Serializable {
 	 * Java bean function.
 	 * 
 	 * @param listener
+	 *            The PropertyChangeListener to be added
 	 */
 	public void addPropertyChangeListener(PropertyChangeListener listener) {
 		this.changeSupport.addPropertyChangeListener(listener);
+	}
+
+	/**
+	 * Java bean function.
+	 * 
+	 * @param propertyName
+	 *            The name of the property to listen on.
+	 * @param listener
+	 *            The PropertyChangeListener to be added
+	 */
+	public void addPropertyChangeListener(String propertyName,
+			PropertyChangeListener listener) {
+		this.changeSupport.addPropertyChangeListener(propertyName, listener);
 	}
 
 	@Override
@@ -123,9 +136,23 @@ public class ManagedObject implements java.io.Serializable {
 	 * Java bean function.
 	 * 
 	 * @param listener
+	 *            The PropertyChangeListener to be removed
 	 */
 	public void removePropertyChangeListener(PropertyChangeListener listener) {
 		this.changeSupport.removePropertyChangeListener(listener);
+	}
+
+	/**
+	 * Java bean function.
+	 * 
+	 * @param propertyName
+	 *            The name of the property that was listened on.
+	 * @param listener
+	 *            The PropertyChangeListener to be removed
+	 */
+	public void removePropertyChangeListener(String propertyName,
+			PropertyChangeListener listener) {
+		this.changeSupport.removePropertyChangeListener(propertyName, listener);
 	}
 
 	/**

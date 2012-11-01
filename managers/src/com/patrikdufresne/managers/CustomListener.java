@@ -44,15 +44,9 @@ public class CustomListener implements PostInsertEventListener,
 	private ObjectIdentityTracker tracker;
 
 	/**
-	 * Associated managers.
-	 */
-	private Managers managers;
-
-	/**
 	 * Create a new interceptor.
 	 */
-	public CustomListener(Managers managers) {
-		this.managers = managers;
+	public CustomListener() {
 		this.tracker = new ObjectIdentityTracker();
 	}
 
@@ -92,10 +86,8 @@ public class CustomListener implements PostInsertEventListener,
 			try {
 				ManagedObjectUtils.copyProperties(event.getEntity(), obj);
 			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (InvocationTargetException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
