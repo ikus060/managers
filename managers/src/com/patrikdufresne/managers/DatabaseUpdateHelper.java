@@ -7,18 +7,16 @@ package com.patrikdufresne.managers;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.internal.SessionFactoryImpl;
+import org.hibernate.jdbc.ReturningWork;
 import org.hibernate.jdbc.Work;
 import org.hibernate.service.ServiceRegistry;
-import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.tool.hbm2ddl.DatabaseMetadata;
 import org.hibernate.tool.hbm2ddl.TableMetadata;
 
@@ -161,21 +159,16 @@ public class DatabaseUpdateHelper {
 	 * @return the metadata
 	 */
 	public static DatabaseMetadata getDatabaseMetadata(SessionFactory factory) {
-
-		final Map<String, Object> returnValue = new HashMap<String, Object>();
-
 		final Dialect dialect = getDialect(factory);
-
 		// Run the update script
-		factory.openSession().doWork(new Work() {
-			@Override
-			public void execute(Connection connection) throws SQLException {
-				returnValue.put("meta", new DatabaseMetadata(connection,
-						dialect));
-			}
-		});
-
-		return (DatabaseMetadata) returnValue.get("meta");
+		return factory.openSession().doReturningWork(
+				new ReturningWork<DatabaseMetadata>() {
+					@Override
+					public DatabaseMetadata execute(Connection connection)
+							throws SQLException {
+						return new DatabaseMetadata(connection, dialect);
+					}
+				});
 	}
 
 	/**
@@ -209,23 +202,20 @@ public class DatabaseUpdateHelper {
 	public static TableMetadata getTableMetadata(SessionFactory factory,
 			final String table, final String schema, final String catalog) {
 
-		final Map<String, Object> returnValue = new HashMap<String, Object>();
-
 		final Dialect dialect = getDialect(factory);
 
 		// Run the update script
-		factory.openSession().doWork(new Work() {
-			@Override
-			public void execute(Connection connection) throws SQLException {
-				DatabaseMetadata meta = new DatabaseMetadata(connection,
-						dialect);
-				returnValue.put("meta",
-						meta.getTableMetadata(table, schema, catalog, false));
-			}
-		});
-
-		return (TableMetadata) returnValue.get("meta");
-
+		return factory.openSession().doReturningWork(
+				new ReturningWork<TableMetadata>() {
+					@Override
+					public TableMetadata execute(Connection connection)
+							throws SQLException {
+						DatabaseMetadata meta = new DatabaseMetadata(
+								connection, dialect);
+						return meta.getTableMetadata(table, schema, catalog,
+								false);
+					}
+				});
 	}
 
 	/**
