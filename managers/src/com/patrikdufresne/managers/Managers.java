@@ -507,8 +507,10 @@ public abstract class Managers {
 				// new session.
 				ManagerContext.getDefault().getSession().getTransaction()
 						.rollback();
-				if(runnable instanceof SafeQuery){
-					((SafeQuery)runnable).handleException(e);
+				if (runnable instanceof SafeQuery) {
+					((SafeQuery) runnable).handleException(e);
+				} else if (runnable instanceof SafeExec) {
+					((SafeExec) runnable).handleException(e);
 				}
 				throw new ManagerException(e);
 			} finally {
