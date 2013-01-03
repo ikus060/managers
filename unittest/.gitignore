@@ -1,1 +1,3 @@
 /bin
+/ant-target
+*.h2.db
