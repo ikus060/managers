@@ -5,8 +5,6 @@ import java.util.List;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 
-import com.patrikdufresne.managers.ManagedObject;
-
 /**
  * Entity for unit testing
  * 
@@ -14,7 +12,7 @@ import com.patrikdufresne.managers.ManagedObject;
  * 
  */
 @Entity
-public class MockEntity extends ManagedObject {
+public class MockEntity extends ArchivableObject {
 
 	@Override
 	public String toString() {

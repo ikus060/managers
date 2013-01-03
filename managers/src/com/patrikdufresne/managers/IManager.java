@@ -1,13 +1,18 @@
+/*
+ * Copyright (c) 2011, Patrik Dufresne. All rights reserved.
+ * Patrik Dufresne PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
 package com.patrikdufresne.managers;
 
 import java.util.Collection;
 import java.util.List;
 
 /**
- * Classes implementing this interface give access to functions manipulating
- * persistance object.
+ * This interface represent a manager used to manipulate object within the
+ * persistent layer. Each implementation of this interface should be
+ * specialized to manage one class type.
  * 
- * @author patapouf
+ * @author Patrik Dufresne
  * 
  * @param <T>
  */

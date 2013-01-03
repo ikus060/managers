@@ -4,10 +4,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 
-import com.patrikdufresne.managers.AbstractManager;
-import com.patrikdufresne.managers.Managers;
-
-public class MockEntityManager extends AbstractManager<MockEntity> {
+public class MockEntityManager extends AbstractArchivableManager<MockEntity> {
 
 	public MockEntityManager(Managers managers) {
 		super(managers);

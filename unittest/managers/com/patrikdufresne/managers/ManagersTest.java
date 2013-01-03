@@ -60,6 +60,196 @@ public class ManagersTest extends AbstractManagerTest {
 	}
 
 	/**
+	 * Test if the archive function set the archive date and send an event.
+	 * 
+	 * @throws ManagerException
+	 */
+	@Test
+	public void testArchive() throws ManagerException {
+
+		// Add an entity
+		MockEntity entity = new MockEntity();
+		entity.setName("a");
+		getManagers().addAll(Arrays.asList(entity));
+
+		ManagerEventCounter counter = new ManagerEventCounter();
+		getManagers().addObserver(ManagerEvent.UPDATE, MockEntity.class,
+				counter);
+
+		// Archive the entity
+		getManagers().archiveAll(Arrays.asList(entity));
+		assertNotNull(entity.getArchivedDate());
+		assertEquals(1, counter.size());
+
+	}
+	
+	@Test
+	public void testFailToBeginTransaction_SessionClosed()
+			throws ManagerException, InterruptedException {
+
+		// Add entity
+		final MockEntity entity1 = new MockEntity();
+		entity1.setName("a");
+
+		// Open a transaction, so an exception will be raised when opening a
+		// second transaction.
+		Session session = getManagers().getSessionFactory().getCurrentSession();
+		session.beginTransaction();
+
+		try {
+			getManagers().getMockEntityManager().add(Arrays.asList(entity1));
+			Assert.fail("Exception expected");
+		} catch (ManagerException e) {
+			Assert.assertTrue(e.getCause() instanceof TransactionException);
+		}
+
+		getManagers().getMockEntityManager().add(Arrays.asList(entity1));
+
+	}
+
+	/**
+	 * Check if the list() function return only unarchived objects.
+	 * 
+	 * @throws ManagerException
+	 */
+	@Test
+	public void testList_WithArchivedObject() throws ManagerException {
+
+		// Add an entities
+		MockEntity e1 = new MockEntity();
+		e1.setName("a");
+		MockEntity e2 = new MockEntity();
+		e2.setName("a");
+		getManagers().addAll(Arrays.asList(e1, e2));
+
+		List<MockEntity> list = getManagers().getMockEntityManager().list();
+		assertEquals(2, list.size());
+		assertTrue(list.contains(e1));
+		assertTrue(list.contains(e2));
+
+		// Archive the entity #1
+		getManagers().archiveAll(Arrays.asList(e1));
+		assertNotNull(e1.getArchivedDate());
+
+		// Call list()
+		list = getManagers().getMockEntityManager().list();
+		assertEquals(1, list.size());
+		assertFalse(list.contains(e1));
+		assertTrue(list.contains(e2));
+	}
+
+	/**
+	 * Check if the list() function return only unarchived objects.
+	 * 
+	 * @throws ManagerException
+	 */
+	@Test
+	public void testListArchived() throws ManagerException {
+
+		// Add an entities
+		MockEntity e1 = new MockEntity();
+		e1.setName("a");
+		MockEntity e2 = new MockEntity();
+		e2.setName("a");
+		getManagers().addAll(Arrays.asList(e1, e2));
+
+		List<MockEntity> list = getManagers().getMockEntityManager().listArchived();
+		assertEquals(0, list.size());
+
+		// Archive the entity #1
+		getManagers().archiveAll(Arrays.asList(e1));
+		assertNotNull(e1.getArchivedDate());
+
+		// Call list()
+		list = getManagers().getMockEntityManager().listArchived();
+		assertEquals(1, list.size());
+		assertTrue(list.contains(e1));
+		assertFalse(list.contains(e2));
+	}
+
+	@Test
+	public void testObjectIdentity() throws ManagerException {
+
+		// Add entity
+		MockEntity entity = addEntity();
+
+		// Get another instance of the entity
+		List<MockEntity> list;
+		try {
+			list = getManagers().getMockEntityManager().list();
+		} catch (ManagerException e) {
+			fail("Fail to list the entities", e);
+			return;
+		}
+		assertEquals("Wrong number of entity.", 1, list.size());
+		MockEntity entity2 = list.get(0);
+		assertFalse(entity == entity2);
+
+		// Update the original entity.
+		entity.setName("1");
+		try {
+			getManagers().getMockEntityManager().update(Arrays.asList(entity));
+		} catch (ManagerException e) {
+			fail("Fail to update the entity.", e);
+			return;
+		}
+
+		assertEquals("Properties not copied.", entity.getName(),
+				entity2.getName());
+
+	}
+
+	@Test(expected = ManagerException.class)
+	public void testQuery_WithSafeQuery_ExpectCallToHandleException()
+			throws ManagerException {
+
+		getManagers().query(new SafeQuery<MockEntity>() {
+
+			@Override
+			public void handleException(Throwable exception) {
+				assertEquals("my custom exception", exception.getMessage());
+			}
+
+			@Override
+			public MockEntity run() throws ManagerException {
+				throw new RuntimeException("my custom exception");
+			}
+
+		});
+
+	}
+
+	/**
+	 * Test if the manager generate an event when an entity is removed.
+	 * 
+	 * @throws ManagerException
+	 */
+	@Test
+	public void testRemove_withEntity_ExpectEvent() throws ManagerException {
+
+		// Add entity
+		MockEntity entity = new MockEntity();
+		entity.setName("a");
+		getManagers().getMockEntityManager().add(Arrays.asList(entity));
+		assertEquals("Wrong number of entities", 1, getManagers()
+				.getMockEntityManager().list().size());
+
+		// Attach remove listener
+		ManagerEventCounter counter = new ManagerEventCounter();
+		getManagers().getMockEntityManager().addObserver(ManagerEvent.REMOVE,
+				counter);
+
+		// Remove entity
+		getManagers().removeAll(Arrays.asList(entity));
+
+		assertEquals("Wrong number of entities", 0, getManagers()
+				.getMockEntityManager().list().size());
+
+		assertEquals("Wrong number of event.", 1, counter.size());
+
+	}
+
+	/**
 	 * Test if the manager generate an event when an entity is updated. Also
 	 * check if other reference of the same object is updated.
 	 * 
@@ -101,110 +291,6 @@ public class ManagersTest extends AbstractManagerTest {
 		assertEquals((new Date()).getTime(), entity.getModificationDate()
 				.getTime(), 60000);
 		assertEquals(entity.getModificationDate(), entity.getModificationDate());
-
-	}
-
-	/**
-	 * Test if the manager generate an event when an entity is removed.
-	 * 
-	 * @throws ManagerException
-	 */
-	@Test
-	public void testRemove_withEntity_ExpectEvent() throws ManagerException {
-
-		// Add entity
-		MockEntity entity = new MockEntity();
-		entity.setName("a");
-		getManagers().getMockEntityManager().add(Arrays.asList(entity));
-		assertEquals("Wrong number of entities", 1, getManagers()
-				.getMockEntityManager().list().size());
-
-		// Attach remove listener
-		ManagerEventCounter counter = new ManagerEventCounter();
-		getManagers().getMockEntityManager().addObserver(ManagerEvent.REMOVE,
-				counter);
-
-		// Remove entity
-		getManagers().removeAll(Arrays.asList(entity));
-
-		assertEquals("Wrong number of entities", 0, getManagers()
-				.getMockEntityManager().list().size());
-
-		assertEquals("Wrong number of event.", 1, counter.size());
-
-	}
-
-	@Test
-	public void testObjectIdentity() throws ManagerException {
-
-		// Add entity
-		MockEntity entity = addEntity();
-
-		// Get another instance of the entity
-		List<MockEntity> list;
-		try {
-			list = getManagers().getMockEntityManager().list();
-		} catch (ManagerException e) {
-			fail("Fail to list the entities", e);
-			return;
-		}
-		assertEquals("Wrong number of entity.", 1, list.size());
-		MockEntity entity2 = list.get(0);
-		assertFalse(entity == entity2);
-
-		// Update the original entity.
-		entity.setName("1");
-		try {
-			getManagers().getMockEntityManager().update(Arrays.asList(entity));
-		} catch (ManagerException e) {
-			fail("Fail to update the entity.", e);
-			return;
-		}
-
-		assertEquals("Properties not copied.", entity.getName(),
-				entity2.getName());
-
-	}
-
-	/**
-	 * Test the behavior of the managers when an exception occurred within the
-	 * transaction. The expected behavior is a session rollback and close.
-	 * 
-	 * @throws ManagerException
-	 */
-	@Test
-	public void testUpdate_WithRuntimeException_SessionClosed()
-			throws ManagerException {
-
-		// Add entity
-		MockEntity entity = new MockEntity();
-		entity.setName("a");
-		getManagers().getMockEntityManager().add(Arrays.asList(entity));
-		List<MockEntity> list = getManagers().getMockEntityManager().list();
-		assertEquals("Wrong number of entities", 1, list.size());
-		MockEntity sameEntity = list.get(0);
-
-		// Update with exception
-		entity.setName("b");
-		try {
-			getManagers().getMockEntityManager().updateWithRuntimeException(
-					Arrays.asList(entity));
-			Assert.fail("An exception should be trown");
-		} catch (ManagerException e) {
-			// Nothing to do, this is expected
-			Assert.assertTrue(e.getCause() instanceof RuntimeException);
-		} catch (Throwable e) {
-			Assert.fail("Any exception, should be rethrown into a ManagerException.");
-		}
-
-		// Make sure other instance of the same entity is not updated
-		assertEquals("a", sameEntity.getName());
-
-		// Then run the update again without exception.
-		getManagers().getMockEntityManager().update(Arrays.asList(entity));
-
-		// Make sure other instance are updated
-		assertEquals("b", sameEntity.getName());
 
 	}
 
@@ -295,47 +381,45 @@ public class ManagersTest extends AbstractManagerTest {
 
 	}
 
+	/**
+	 * Test the behavior of the managers when an exception occurred within the
+	 * transaction. The expected behavior is a session rollback and close.
+	 * 
+	 * @throws ManagerException
+	 */
 	@Test
-	public void testFailToBeginTransaction_SessionClosed()
-			throws ManagerException, InterruptedException {
-
-		// Add entity
-		final MockEntity entity1 = new MockEntity();
-		entity1.setName("a");
-
-		// Open a transaction, so an exception will be raised when opening a
-		// second transaction.
-		Session session = getManagers().getSessionFactory().getCurrentSession();
-		session.beginTransaction();
-
-		try {
-			getManagers().getMockEntityManager().add(Arrays.asList(entity1));
-			Assert.fail("Exception expected");
-		} catch (ManagerException e) {
-			Assert.assertTrue(e.getCause() instanceof TransactionException);
-		}
-
-		getManagers().getMockEntityManager().add(Arrays.asList(entity1));
-
-	}
-
-	@Test(expected = ManagerException.class)
-	public void testQuery_WithSafeQuery_ExpectCallToHandleException()
+	public void testUpdate_WithRuntimeException_SessionClosed()
 			throws ManagerException {
 
-		getManagers().query(new SafeQuery<MockEntity>() {
+		// Add entity
+		MockEntity entity = new MockEntity();
+		entity.setName("a");
+		getManagers().getMockEntityManager().add(Arrays.asList(entity));
+		List<MockEntity> list = getManagers().getMockEntityManager().list();
+		assertEquals("Wrong number of entities", 1, list.size());
+		MockEntity sameEntity = list.get(0);
 
-			@Override
-			public MockEntity run() throws ManagerException {
-				throw new RuntimeException("my custom exception");
-			}
+		// Update with exception
+		entity.setName("b");
+		try {
+			getManagers().getMockEntityManager().updateWithRuntimeException(
+					Arrays.asList(entity));
+			Assert.fail("An exception should be trown");
+		} catch (ManagerException e) {
+			// Nothing to do, this is expected
+			Assert.assertTrue(e.getCause() instanceof RuntimeException);
+		} catch (Throwable e) {
+			Assert.fail("Any exception, should be rethrown into a ManagerException.");
+		}
 
-			@Override
-			public void handleException(Throwable exception) {
-				assertEquals("my custom exception", exception.getMessage());
-			}
+		// Make sure other instance of the same entity is not updated
+		assertEquals("a", sameEntity.getName());
 
-		});
+		// Then run the update again without exception.
+		getManagers().getMockEntityManager().update(Arrays.asList(entity));
+
+		// Make sure other instance are updated
+		assertEquals("b", sameEntity.getName());
 
 	}
 }

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2011, Patrik Dufresne. All rights reserved.
+ * Patrik Dufresne PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
 package com.patrikdufresne.managers;
 
 import java.util.Collection;
@@ -8,7 +12,8 @@ import java.util.List;
 import org.hibernate.criterion.Projections;
 
 /**
- * This abstract class make it easier to implement the IManager interface.
+ * This implementation of {@link IManager} provide basic feature to make it
+ * easier to implement the interface.
  */
 public abstract class AbstractManager<T extends ManagedObject> implements
 		IManager<T> {
@@ -38,12 +43,13 @@ public abstract class AbstractManager<T extends ManagedObject> implements
 			@Override
 			public void run() throws ManagerException {
 				preAddObjects(s);
+				Date date = new Date();
 				Iterator<? extends T> iter = s.iterator();
 				while (iter.hasNext()) {
 					T t = iter.next();
 					preAddObject(t);
-					t.setCreationDate(new Date());
-					t.setModificationDate(new Date());
+					t.setCreationDate(date);
+					t.setModificationDate(date);
 					ManagerContext.getDefaultSession().save(t);
 					postAddObject(t);
 				}
@@ -293,11 +299,12 @@ public abstract class AbstractManager<T extends ManagedObject> implements
 			@Override
 			public void run() throws ManagerException {
 				preUpdateObjects(s);
+				Date date = new Date();
 				Iterator<? extends T> iter = s.iterator();
 				while (iter.hasNext()) {
 					T t = iter.next();
 					preUpdateObject(t);
-					t.setModificationDate(new Date());
+					t.setModificationDate(date);
 					ManagerContext.getDefaultSession().update(t);
 					postUpdateObject(t);
 				}

@@ -215,7 +215,41 @@ public abstract class Managers {
 				}
 			}
 		});
+	}
 
+	/**
+	 * Archive the given objects.
+	 * <p>
+	 * This function shall be used to avoid calling the specific implementation
+	 * of the manager.
+	 * 
+	 * @param list
+	 *            the objects to be archived.
+	 * @throws ManagerException
+	 *             If the object is not archivable or if the associated manager
+	 *             doesn't implement the IArchivableManager.
+	 */
+	public void archiveAll(final List<? extends ManagedObject> list)
+			throws ManagerException {
+		// Open one transaction
+		exec(new Exec() {
+			@Override
+			public void run() throws ManagerException {
+				// Add each entities
+				for (ManagedObject o : list) {
+					if (!(o instanceof ArchivableObject)) {
+						throw new ManagerException("object not archivable");
+					}
+					IManager<ManagedObject> manager = (IManager<ManagedObject>) getManagerForClass(o
+							.getClass());
+					if (!(manager instanceof IArchivableManager)) {
+						throw new ManagerException(
+								"manager not supporting archiving");
+					}
+					((IArchivableManager) manager).archive(Arrays.asList(o));
+				}
+			}
+		});
 	}
 
 	/**
