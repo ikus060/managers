@@ -12,9 +12,9 @@ import java.net.NetworkInterface;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.LinkedList;
-import java.util.List;
 
 import org.h2.Driver;
 import org.h2.tools.Server;
@@ -38,8 +38,8 @@ import org.hibernate.service.ServiceRegistryBuilder;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 
 /**
- * This class is used to keep track of the hibernate context. It's intended to
- * provide a single object to execute any database opperation.
+ * This class is used to keep track of the Hibernate context. It's intended to
+ * provide a single object to execute any database operation.
  * 
  * @author Patrik Dufresne
  * 
@@ -158,9 +158,10 @@ public abstract class Managers {
 	private DatabaseUrl url;
 
 	/**
-	 * Create a new managers instance using the given database url.
+	 * Create a new managers instance using the given database URL.
 	 * 
 	 * @param url
+	 *            the database URL
 	 * @throws ManagerException
 	 */
 	public Managers(DatabaseUrl url) throws ManagerException {
@@ -201,7 +202,7 @@ public abstract class Managers {
 	 * @param list
 	 *            the list of objects
 	 */
-	public void addAll(final List<? extends ManagedObject> list)
+	public void addAll(final Collection<? extends ManagedObject> list)
 			throws ManagerException {
 		// Open one transaction
 		exec(new Exec() {
@@ -229,7 +230,7 @@ public abstract class Managers {
 	 *             If the object is not archivable or if the associated manager
 	 *             doesn't implement the IArchivableManager.
 	 */
-	public void archiveAll(final List<? extends ManagedObject> list)
+	public void archiveAll(final Collection<? extends ManagedObject> list)
 			throws ManagerException {
 		// Open one transaction
 		exec(new Exec() {
@@ -362,7 +363,7 @@ public abstract class Managers {
 	 */
 	private String[] getInterfaces() {
 		try {
-			List<String> adresses = new LinkedList<String>();
+			LinkedList<String> adresses = new LinkedList<String>();
 			Enumeration<NetworkInterface> e = NetworkInterface
 					.getNetworkInterfaces();
 
@@ -462,7 +463,7 @@ public abstract class Managers {
 	 *            the objects to remove
 	 * @throws ManagerException
 	 */
-	public void removeAll(final List<? extends ManagedObject> list)
+	public void removeAll(final Collection<? extends ManagedObject> list)
 			throws ManagerException {
 		// Open one transaction
 		exec(new Exec() {
@@ -609,7 +610,7 @@ public abstract class Managers {
 	 *            the collection of entity
 	 * @throws ManagerException
 	 */
-	public void updateAll(final List<? extends ManagedObject> list)
+	public void updateAll(final Collection<? extends ManagedObject> list)
 			throws ManagerException {
 		// Open a transaction
 		exec(new Exec() {
