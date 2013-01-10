@@ -111,13 +111,13 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	}
 
 	/** Cached set */
-	Set cachedSet = new HashSet();
+	protected Set cachedSet = new HashSet();
 
 	/** List of observable dependencies. */
 	private IObservable[] dependencies = new IObservable[0];
 
 	/** True if dirty */
-	boolean dirty = true;
+	protected boolean dirty = true;
 
 	/** The element type of this observable */
 	private Class<? extends ManagedObject> elementType;
@@ -192,11 +192,10 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	 *            the managers to use
 	 * @param elementType
 	 *            The element type of this observable
+	 * @param events
+	 *            the list of manager event to listen to
 	 * @param dependencies
 	 *            the list of observable dependencies.
-	 * 
-	 * @throws NullPointerException
-	 *             is the argument is null
 	 */
 	public ManagedObjectComputedSet(Managers managers,
 			Class<? extends ManagedObject> elementType,
@@ -211,19 +210,21 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	 *            the realm
 	 * @param managers
 	 *            the managers to use
+	 * @param elementType
+	 *            The element type of this observable
+	 * @param events
+	 *            the list of manager event to listen to
 	 * @param dependencies
 	 *            the list of observable dependencies.
-	 * @param cache
 	 */
 	public ManagedObjectComputedSet(Realm realm, Managers managers,
 			Class<? extends ManagedObject> elementType,
 			Map<Class, Integer> events, IObservable[] dependencies) {
 		super(realm);
 		if (managers == null || elementType == null) {
-			throw new NullPointerException();
+			throw new IllegalArgumentException();
 		}
 		ObservableTracker.observableCreated(this);
-
 		this.managers = managers;
 		this.elementType = elementType;
 		this.events = events;
@@ -299,7 +300,7 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	public synchronized void dispose() {
 		checkRealm();
 		try {
-			if(!isDisposed()) {
+			if (!isDisposed()) {
 				stopListening();
 				lastListenerRemoved();
 				this.managers = null;
@@ -341,7 +342,8 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	 * Query the database.
 	 * <p>
 	 * Sub classes may override this function to query the database using
-	 * something else then list().
+	 * something else then list(). The collection return by this function must
+	 * already be filtered according to {@link #doSelect(Object)}.
 	 * 
 	 * @return a collection
 	 */
