@@ -161,7 +161,8 @@ public abstract class AbstractManager<T extends ManagedObject> implements
 	 *            the objects added
 	 * @throws ManagerException
 	 */
-	protected void postAddObjects(Collection<? extends T> s) {
+	protected void postAddObjects(Collection<? extends T> s)
+			throws ManagerException {
 		// Implemented by sub-classes.
 	}
 
