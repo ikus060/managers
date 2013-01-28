@@ -51,7 +51,8 @@ import com.patrikdufresne.managers.Managers;
  * 
  */
 @SuppressWarnings("rawtypes")
-public class ManagedObjectComputedSet extends AbstractObservableSet {
+public class ManagedObjectComputedSet extends AbstractObservableSet implements
+		IManagerObservable {
 
 	/**
 	 * Inner class that implements interfaces that we don't want to expose as
@@ -409,6 +410,7 @@ public class ManagedObjectComputedSet extends AbstractObservableSet {
 	 * 
 	 * @return
 	 */
+	@Override
 	public Managers getManagers() {
 		return this.managers;
 	}

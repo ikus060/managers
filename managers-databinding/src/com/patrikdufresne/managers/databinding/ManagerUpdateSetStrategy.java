@@ -6,13 +6,10 @@ package com.patrikdufresne.managers.databinding;
 
 import java.util.Arrays;
 
+import org.eclipse.core.databinding.UpdateSetStrategy;
 import org.eclipse.core.databinding.UpdateValueStrategy;
-import org.eclipse.core.databinding.beans.IBeanObservable;
-import org.eclipse.core.databinding.observable.IDecoratingObservable;
 import org.eclipse.core.databinding.observable.IObservable;
-import org.eclipse.core.databinding.observable.IObserving;
 import org.eclipse.core.databinding.observable.set.IObservableSet;
-import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.validation.ValidationStatus;
 import org.eclipse.core.runtime.IStatus;
 
@@ -27,26 +24,26 @@ import com.patrikdufresne.managers.Managers;
  * @author Patrik Dufresne
  * 
  */
-public class ManagerUpdateValueStrategy extends UpdateValueStrategy {
+public class ManagerUpdateSetStrategy extends UpdateSetStrategy {
 
 	private Managers managers;
 
 	/**
-	 * Creates a new update value strategy for automatically updating the
-	 * destination observable value whenever the source observable value
-	 * changes. Default validators and a default converter will be provided. The
-	 * defaults can be changed by calling one of the setter methods.
+	 * Creates a new update set strategy for automatically updating the
+	 * destination observable set whenever the source observable value changes.
+	 * Default validators and a default converter will be provided. The defaults
+	 * can be changed by calling one of the setter methods.
 	 * 
 	 * @param managers
 	 *            the managers instance to be used to persist the
 	 *            {@link ManagedObject}.
 	 */
-	public ManagerUpdateValueStrategy(Managers managers) {
+	public ManagerUpdateSetStrategy(Managers managers) {
 		this(managers, true, UpdateValueStrategy.POLICY_UPDATE);
 	}
 
 	/**
-	 * Creates a new update value strategy with a configurable update policy.
+	 * Creates a new update set strategy with a configurable update policy.
 	 * Default validators and a default converter will be provided if
 	 * <code>provideDefaults</code> is <code>true</code>. The defaults can be
 	 * changed by calling one of the setter methods.
@@ -62,8 +59,8 @@ public class ManagerUpdateValueStrategy extends UpdateValueStrategy {
 	 *            one of {@link #POLICY_NEVER}, {@link #POLICY_ON_REQUEST},
 	 *            {@link #POLICY_CONVERT}, or {@link #POLICY_UPDATE}
 	 */
-	public ManagerUpdateValueStrategy(Managers managers,
-			boolean provideDefaults, int updatePolicy) {
+	public ManagerUpdateSetStrategy(Managers managers, boolean provideDefaults,
+			int updatePolicy) {
 		super(provideDefaults, updatePolicy);
 		if (managers == null) {
 			throw new NullPointerException();
@@ -72,7 +69,7 @@ public class ManagerUpdateValueStrategy extends UpdateValueStrategy {
 	}
 
 	/**
-	 * Creates a new update value strategy with a configurable update policy.
+	 * Creates a new update set strategy with a configurable update policy.
 	 * Default validators and a default converter will be provided. The defaults
 	 * can be changed by calling one of the setter methods.
 	 * 
@@ -83,24 +80,38 @@ public class ManagerUpdateValueStrategy extends UpdateValueStrategy {
 	 *            one of {@link #POLICY_NEVER}, {@link #POLICY_ON_REQUEST},
 	 *            {@link #POLICY_CONVERT}, or {@link #POLICY_UPDATE}
 	 */
-	public ManagerUpdateValueStrategy(Managers managers, int updatePolicy) {
+	public ManagerUpdateSetStrategy(Managers managers, int updatePolicy) {
 		this(managers, true, updatePolicy);
 	}
 
 	/**
-	 * This implementation sets the observable value and if the observable is
-	 * associated to a ManagedObject, this class will persiste the data into the
-	 * manager.
+	 * This implementation will persists the modification done to a
+	 * {@link ManagedObject}.
 	 */
 	@Override
-	protected IStatus doSet(IObservableValue observableValue, Object value) {
+	protected IStatus doAdd(IObservableSet observableSet, Object element) {
 		// Call the super method to sets the value
-		IStatus status = super.doSet(observableValue, value);
+		IStatus status = super.doAdd(observableSet, element);
 		if (!status.isOK()) {
 			return status;
 		}
 		// Persists the modification
-		return persist(observableValue);
+		return persist(observableSet);
+	}
+
+	/**
+	 * This implementation will persists the modification done to a
+	 * {@link ManagedObject}.
+	 */
+	@Override
+	protected IStatus doRemove(IObservableSet observableSet, Object element) {
+		// Call the super method to sets the value
+		IStatus status = super.doRemove(observableSet, element);
+		if (!status.isOK()) {
+			return status;
+		}
+		// Persists the modification
+		return persist(observableSet);
 	}
 
 	/**
@@ -119,30 +130,7 @@ public class ManagerUpdateValueStrategy extends UpdateValueStrategy {
 	 * @return a manage object or null if not found
 	 */
 	protected ManagedObject findManagedObject(IObservable target) {
-		if (target instanceof IBeanObservable) {
-			Object observed = ((IBeanObservable) target).getObserved();
-			if (observed instanceof ManagedObject) {
-				return (ManagedObject) observed;
-			}
-		}
-
-		if (target instanceof IDecoratingObservable) {
-			IObservable decorated = ((IDecoratingObservable) target)
-					.getDecorated();
-			ManagedObject object = findManagedObject(decorated);
-			if (object != null)
-				return object;
-		}
-
-		if (target instanceof IObserving) {
-			Object observed = ((IObserving) target).getObserved();
-			if (observed instanceof ManagedObject)
-				return (ManagedObject) observed;
-			if (observed instanceof IObservable)
-				return findManagedObject((IObservable) observed);
-		}
-
-		return null;
+		return Util.findManagedObject(target);
 	}
 
 	/**
@@ -154,7 +142,7 @@ public class ManagerUpdateValueStrategy extends UpdateValueStrategy {
 	 *            the observable being modify (should embedded a
 	 *            {@link ManagedObject}
 	 */
-	protected IStatus persist(IObservable observable) {
+	protected IStatus persist(IObservableSet observable) {
 
 		ManagedObject obj = findManagedObject(observable);
 		if (obj == null) {
