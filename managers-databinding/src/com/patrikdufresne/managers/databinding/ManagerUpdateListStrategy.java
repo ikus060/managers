@@ -11,6 +11,7 @@ import org.eclipse.core.databinding.UpdateValueStrategy;
 import org.eclipse.core.databinding.observable.IObservable;
 import org.eclipse.core.databinding.observable.list.IObservableList;
 import org.eclipse.core.databinding.observable.set.IObservableSet;
+import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.validation.ValidationStatus;
 import org.eclipse.core.runtime.IStatus;
 
@@ -26,6 +27,87 @@ import com.patrikdufresne.managers.Managers;
  * 
  */
 public class ManagerUpdateListStrategy extends UpdateListStrategy {
+
+	/**
+	 * Create an update strategy to persists the managed object of an observable
+	 * value.
+	 * 
+	 * @param managers
+	 *            the managers instance to be used to persist the
+	 *            {@link ManagedObject}.
+	 * @param provideDefaults
+	 *            if <code>true</code>, default validators and a default
+	 *            converter will be provided based on the observable value's
+	 *            type.
+	 * @param updatePolicy
+	 *            one of {@link #POLICY_NEVER}, {@link #POLICY_ON_REQUEST},
+	 *            {@link #POLICY_CONVERT}, or {@link #POLICY_UPDATE}
+	 * 
+	 * @return a new update set strategy
+	 */
+	public static ManagerUpdateListStrategy create(Managers managers,
+			boolean provideDefaults, int updatePolicy,
+			final IObservableValue observableValue) {
+		if (observableValue == null) {
+			throw new IllegalArgumentException();
+		}
+		// Create an anonymous class overriding the findManagedObject method to
+		// provide the value of the observable.
+		return new ManagerUpdateListStrategy(managers, provideDefaults,
+				updatePolicy) {
+
+			/**
+			 * This implementation return the value of the observable if it
+			 * contains a ManagedObject
+			 */
+			@Override
+			protected ManagedObject findManagedObject(IObservable target) {
+				if (observableValue != null && !observableValue.isDisposed()
+						&& observableValue.getValue() instanceof ManagedObject) {
+					return (ManagedObject) observableValue.getValue();
+				}
+				return null;
+			}
+
+		};
+
+	}
+
+	/**
+	 * Create an update strategy to persists the managed object of an observable
+	 * value.
+	 * 
+	 * @param managers
+	 *            the managers instance to be used to persist the
+	 *            {@link ManagedObject}.
+	 * 
+	 * @param updatePolicy
+	 *            one of {@link #POLICY_NEVER}, {@link #POLICY_ON_REQUEST},
+	 *            {@link #POLICY_CONVERT}, or {@link #POLICY_UPDATE}
+	 * 
+	 * @return a new update set strategy
+	 */
+	public static ManagerUpdateListStrategy create(Managers managers,
+			int updatePolicy, final IObservableValue observableValue) {
+		return create(managers, true, updatePolicy,
+				observableValue);
+	}
+
+	/**
+	 * Create an update strategy to persists the managed object of an observable
+	 * value.
+	 * 
+	 * @param managers
+	 *            the managers instance to be used to persist the
+	 *            {@link ManagedObject}.
+	 * 
+	 * @return a new update set strategy
+	 */
+	public static ManagerUpdateListStrategy create(Managers managers,
+			final IObservableValue observableValue) {
+		return create(managers, true,
+				UpdateValueStrategy.POLICY_UPDATE, observableValue);
+	}
 
 	private Managers managers;
 
