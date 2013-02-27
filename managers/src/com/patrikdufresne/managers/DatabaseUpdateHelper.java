@@ -117,6 +117,27 @@ public class DatabaseUpdateHelper {
 	}
 
 	/**
+	 * Create the SQL to drop a column.
+	 * 
+	 * @param dialect
+	 *            the dialect
+	 * @param table
+	 *            the table name
+	 * @param columnName
+	 *            the column name to be drop
+	 * @return the resulting SQL
+	 */
+	public static String alterTableDropColumn(Dialect dialect, String table,
+			String columnName) {
+		StringBuffer buf = new StringBuffer();
+		buf.append("ALTER TABLE "); //$NON-NLS-1$
+		buf.append(table);
+		buf.append(" DROP COLUMN "); //$NON-NLS-1$
+		buf.append(columnName);
+		return buf.toString();
+	}
+
+	/**
 	 * Execute the given SQL command against the session factory
 	 * 
 	 * @param factory
