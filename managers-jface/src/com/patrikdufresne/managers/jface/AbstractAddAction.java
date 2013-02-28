@@ -47,6 +47,11 @@ public abstract class AbstractAddAction extends Action {
 	}
 
 	/**
+	 * Used for localization.
+	 */
+	private static final Localized L = Localized.load(AbstractAddAction.class);
+
+	/**
 	 * Managers to used to add the element.
 	 */
 	private Managers managers;
@@ -93,6 +98,7 @@ public abstract class AbstractAddAction extends Action {
 		this.managers = managers;
 		this.shellProvider = shellProvider;
 		this.selectionProvider = selectionProvider;
+		setText(L.get("AbstractAddAction.text"));
 		setImageDescriptor(JFaceResources.getImageRegistry().getDescriptor(
 				ICON_LIST_ADD_16));
 		setEnabled(canCreateObject());
@@ -155,8 +161,7 @@ public abstract class AbstractAddAction extends Action {
 
 		if (!canCreateObject()) {
 			DetailMessageDialog.openWarning(this.shellProvider.getShell(),
-					getText(), Localized.get(AbstractAddAction.class,
-							"AbstractAddAction.cantCreateObject"));
+					getText(), L.get("AbstractAddAction.cantCreateObject"));
 			return;
 		}
 
@@ -168,18 +173,14 @@ public abstract class AbstractAddAction extends Action {
 			StringWriter sw = new StringWriter();
 			e.printStackTrace(new PrintWriter(sw));
 			DetailMessageDialog.openDetailWarning(
-					this.shellProvider.getShell(), getText(), Localized.get(
-							AbstractAddAction.class,
-							"AbstractAddAction.cantCreateObject"), Localized
-							.get(AbstractAddAction.class,
-									"AbstractAddAction.errorOccurred"), sw
-							.toString());
+					this.shellProvider.getShell(), getText(),
+					L.get("AbstractAddAction.cantCreateObject"),
+					L.get("AbstractAddAction.errorOccurred"), sw.toString());
 			return;
 		}
 		if (list == null || list.isEmpty()) {
 			DetailMessageDialog.openWarning(this.shellProvider.getShell(),
-					getText(), Localized.get(AbstractAddAction.class,
-							"AbstractAddAction.cantCreateObject"));
+					getText(), L.get("AbstractAddAction.cantCreateObject"));
 			return;
 		}
 
@@ -190,12 +191,9 @@ public abstract class AbstractAddAction extends Action {
 			StringWriter sw = new StringWriter();
 			e.printStackTrace(new PrintWriter(sw));
 			DetailMessageDialog.openDetailWarning(
-					this.shellProvider.getShell(), getText(), Localized.get(
-							AbstractAddAction.class,
-							"AbstractAddAction.cantCreateObject"), Localized
-							.get(AbstractAddAction.class,
-									"AbstractAddAction.errorOccurred"), sw
-							.toString());
+					this.shellProvider.getShell(), getText(),
+					L.get("AbstractAddAction.cantCreateObject"),
+					L.get("AbstractAddAction.errorOccurred"), sw.toString());
 		}
 
 		// Select object in the viewer
