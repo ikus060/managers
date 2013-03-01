@@ -6,6 +6,7 @@ package com.patrikdufresne.managers;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -344,6 +345,26 @@ public abstract class Managers {
 	 */
 	public void exec(Exec runnable) throws ManagerException {
 		run(runnable);
+	}
+
+	/**
+	 * Query a single object from the database
+	 * 
+	 * @param cls
+	 *            the object type
+	 * @param id
+	 *            the object id
+	 * @return the object
+	 * @throws ManagerException
+	 */
+	public <T> T get(final Class<T> cls, final Serializable id)
+			throws ManagerException {
+		return query(new Query<T>() {
+			@Override
+			public T run() throws ManagerException {
+				return (T) ManagerContext.getDefaultSession().get(cls, id);
+			}
+		});
 	}
 
 	/**
