@@ -32,7 +32,7 @@ public class ManagersUpdateValidateTest {
 	public void testUpdate() throws MalformedURLException, ManagerException {
 
 		// Create the first database and close it
-		DatabaseUrl url = new DatabaseUrl("./unittest");
+		DatabaseUrl url = new DatabaseUrl("./unittestUpdate");
 		url.localfile().delete();
 		managers = new MockManagers(url);
 		managers.dispose();

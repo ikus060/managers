@@ -87,17 +87,15 @@ public class DatabaseUrl {
 		throw new MalformedURLException(this.sheme + " (unsupported sheme)"); //$NON-NLS-1$
 	}
 
-	private void parseName(String path) throws MalformedURLException {
-		// Search for the name
-		Pattern pattern = Pattern
-				.compile("(.*[/\\\\]([^/\\\\]+?))(\\.h2\\.db)?"); //$NON-NLS-1$
-		Matcher matcher = pattern.matcher(path);
-		if (matcher.matches()) {
-			this.path = matcher.group(1);
-			this.name = matcher.group(2);
-		} else {
-			throw new MalformedURLException(path + " (no database name)"); //$NON-NLS-1$
+	/**
+	 * Return a string representation of a local database url.
+	 * @return
+	 */
+	public String getAbsolutePath() {
+		if(!isLocal()){
+			return null;
 		}
+		return new File(path).getAbsolutePath();
 	}
 
 	/**
@@ -140,6 +138,19 @@ public class DatabaseUrl {
 			return null;
 		}
 		return new File(path + ".h2.db"); //$NON-NLS-1$
+	}
+
+	private void parseName(String path) throws MalformedURLException {
+		// Search for the name
+		Pattern pattern = Pattern
+				.compile("(.*[/\\\\]([^/\\\\]+?))(\\.h2\\.db)?"); //$NON-NLS-1$
+		Matcher matcher = pattern.matcher(path);
+		if (matcher.matches()) {
+			this.path = matcher.group(1);
+			this.name = matcher.group(2);
+		} else {
+			throw new MalformedURLException(path + " (no database name)"); //$NON-NLS-1$
+		}
 	}
 
 	/**

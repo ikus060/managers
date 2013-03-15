@@ -141,7 +141,7 @@ public abstract class Managers {
 
 		@Override
 		public void sessionFactoryClosed(SessionFactory factory) {
-			stopServer();
+			//stopServer();
 		}
 
 		@Override
@@ -183,7 +183,7 @@ public abstract class Managers {
 			this.factory = config.buildSessionFactory(serviceRegistry);
 		} catch (Exception e) {
 			// If the server got started, let stop it
-			stopServer();
+			//stopServer();
 			throw new ManagerException(e);
 		}
 
@@ -307,7 +307,7 @@ public abstract class Managers {
 			// Get the file location
 			File file = url.localfile();
 			config.setProperty(Environment.URL,
-					"jdbc:h2:tcp://localhost/" + url.getName()); //$NON-NLS-1$
+					"jdbc:h2://" + url.getAbsolutePath() + ";AUTO_SERVER=TRUE") ; //$NON-NLS-1$
 
 			// Drop and re-create the database schema on startup
 			if (!file.exists()) {
@@ -318,7 +318,7 @@ public abstract class Managers {
 			}
 
 			// Need to open a H2DB server locallysFs
-			startServer(file.getParent());
+			//startServer(file.getParent());
 		} else {
 			// Set the connection string
 			config.setProperty(Environment.URL, url.toString());
@@ -596,33 +596,33 @@ public abstract class Managers {
 	 * 
 	 * @param baseDir
 	 */
-	private void startServer(String baseDir) {
-		if (isServerRunning()) {
-			throw new RuntimeException("Already started"); //$NON-NLS-1$
-		}
-
-		try {
-			// List available arguments : java -cp h2*.jar org.h2.tools.Server
-			// -?
-			// -tcpAllowOthers : to allow other computer to connect
-			this.server = Server.createTcpServer(
-					new String[] { "-tcpAllowOthers", "-baseDir", baseDir }) //$NON-NLS-1$ //$NON-NLS-2$
-					.start();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
-	}
+//	private void startServer(String baseDir) {
+//		if (isServerRunning()) {
+//			throw new RuntimeException("Already started"); //$NON-NLS-1$
+//		}
+//
+//		try {
+//			// List available arguments : java -cp h2*.jar org.h2.tools.Server
+//			// -?
+//			// -tcpAllowOthers : to allow other computer to connect
+//			this.server = Server.createTcpServer(
+//					new String[] { "-tcpAllowOthers", "-baseDir", baseDir }) //$NON-NLS-1$ //$NON-NLS-2$
+//					.start();
+//		} catch (SQLException e) {
+//			e.printStackTrace();
+//			throw new RuntimeException(e);
+//		}
+//	}
 
 	/**
 	 * Stop the h2db server
 	 */
-	private void stopServer() {
-		if (!isServerRunning()) {
-			throw new RuntimeException("Server not running"); //$NON-NLS-1$
-		}
-		this.server.stop();
-	}
+	// private void stopServer() {
+	// if (!isServerRunning()) {
+	//			throw new RuntimeException("Server not running"); //$NON-NLS-1$
+	// }
+	// this.server.stop();
+	// }
 
 	/**
 	 * Used to update multiple entities
