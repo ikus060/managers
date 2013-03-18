@@ -197,14 +197,12 @@ public abstract class AbstractAddAction extends Action {
 		}
 
 		// Select object in the viewer
-		if (getSelectionProvider() instanceof StructuredViewer) {
-			Display.getDefault().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					selectObjects(list);
-				}
-			});
-		}
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				selectObjects(list);
+			}
+		});
 
 	}
 
@@ -214,8 +212,13 @@ public abstract class AbstractAddAction extends Action {
 	 * @param list
 	 */
 	protected void selectObjects(Collection<? extends ManagedObject> list) {
-		((StructuredViewer) getSelectionProvider()).setSelection(
-				new StructuredSelection(list.toArray()), true);
+		if (getSelectionProvider() instanceof StructuredViewer) {
+			((StructuredViewer) getSelectionProvider()).setSelection(
+					new StructuredSelection(list.toArray()), true);
+		} else {
+			getSelectionProvider().setSelection(
+					new StructuredSelection(list.toArray()));
+		}
 	}
 
 }
