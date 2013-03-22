@@ -5,6 +5,8 @@
 package com.patrikdufresne.managers;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.Inet4Address;
@@ -16,8 +18,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.LinkedList;
+import java.util.Properties;
 
 import org.h2.Driver;
+import org.h2.server.TcpServer;
 import org.h2.tools.Server;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -130,8 +134,6 @@ public abstract class Managers {
 
 	private String mode;
 
-	private Server server;
-
 	/**
 	 * This session factory observer is used to stop server.
 	 */
@@ -141,7 +143,7 @@ public abstract class Managers {
 
 		@Override
 		public void sessionFactoryClosed(SessionFactory factory) {
-			//stopServer();
+			// stopServer();
 		}
 
 		@Override
@@ -183,7 +185,7 @@ public abstract class Managers {
 			this.factory = config.buildSessionFactory(serviceRegistry);
 		} catch (Exception e) {
 			// If the server got started, let stop it
-			//stopServer();
+			// stopServer();
 			throw new ManagerException(e);
 		}
 
@@ -307,7 +309,7 @@ public abstract class Managers {
 			// Get the file location
 			File file = url.localfile();
 			config.setProperty(Environment.URL,
-					"jdbc:h2://" + url.getAbsolutePath() + ";AUTO_SERVER=TRUE") ; //$NON-NLS-1$
+					"jdbc:h2://" + url.getAbsolutePath() + ";AUTO_SERVER=TRUE"); //$NON-NLS-1$
 
 			// Drop and re-create the database schema on startup
 			if (!file.exists()) {
@@ -318,7 +320,7 @@ public abstract class Managers {
 			}
 
 			// Need to open a H2DB server locallysFs
-			//startServer(file.getParent());
+			// startServer(file.getParent());
 		} else {
 			// Set the connection string
 			config.setProperty(Environment.URL, url.toString());
@@ -434,15 +436,35 @@ public abstract class Managers {
 	 * @return
 	 */
 	public String[] getServerUrl() {
-		if (this.server != null && this.url != null
-				&& this.url.getName() != null) {
+		if (this.url != null && this.url.getName() != null
+				&& this.url.isLocal()) {
+			// FIXME the following is H2DB specific.
+			String name = this.url.getAbsolutePath();
+			name = name.replaceFirst("\\.h2\\.db$", "");
+			name = name + ".lock.db";
+			// Check if the file exists.
+			File file = new File(name);
+			if (!file.exists() || !file.canRead()) {
+				return new String[0];
+			}
+			// Read the property file.
+			Properties prop = new Properties();
+			try {
+				prop.load(new FileReader(file));
+			} catch (IOException e) {
+				return new String[0];
+			}
+
+			String server = prop.get("server").toString();
+			String port = server.replaceFirst("^127.0.1.1:", "");
+
 			String[] ip = getInterfaces();
 			if (ip != null) {
 				ArrayList<String> urls = new ArrayList<String>(ip.length);
 				for (int i = 0; i < ip.length; i++) {
 					if (!ip[i].matches("127.0.(0|1).1")) { //$NON-NLS-1$
-						urls.add(String
-								.format("jdbc:h2:tcp://%s/%s", ip[i], this.url.getName())); //$NON-NLS-1$
+						urls.add(String.format("jdbc:h2:tcp://%s:%s/%s", ip[i],
+								port, this.url.getName()));
 					}
 				}
 				String a[] = new String[urls.size()];
@@ -459,15 +481,6 @@ public abstract class Managers {
 	 */
 	public SessionFactory getSessionFactory() {
 		return this.factory;
-	}
-
-	/**
-	 * Check if the internal database server is running.
-	 * 
-	 * @return True if the server is running.
-	 */
-	public boolean isServerRunning() {
-		return this.server != null && this.server.isRunning(true);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -596,23 +609,23 @@ public abstract class Managers {
 	 * 
 	 * @param baseDir
 	 */
-//	private void startServer(String baseDir) {
-//		if (isServerRunning()) {
-//			throw new RuntimeException("Already started"); //$NON-NLS-1$
-//		}
-//
-//		try {
-//			// List available arguments : java -cp h2*.jar org.h2.tools.Server
-//			// -?
-//			// -tcpAllowOthers : to allow other computer to connect
-//			this.server = Server.createTcpServer(
-//					new String[] { "-tcpAllowOthers", "-baseDir", baseDir }) //$NON-NLS-1$ //$NON-NLS-2$
-//					.start();
-//		} catch (SQLException e) {
-//			e.printStackTrace();
-//			throw new RuntimeException(e);
-//		}
-//	}
+	// private void startServer(String baseDir) {
+	// if (isServerRunning()) {
+	//			throw new RuntimeException("Already started"); //$NON-NLS-1$
+	// }
+	//
+	// try {
+	// // List available arguments : java -cp h2*.jar org.h2.tools.Server
+	// // -?
+	// // -tcpAllowOthers : to allow other computer to connect
+	// this.server = Server.createTcpServer(
+	//					new String[] { "-tcpAllowOthers", "-baseDir", baseDir }) //$NON-NLS-1$ //$NON-NLS-2$
+	// .start();
+	// } catch (SQLException e) {
+	// e.printStackTrace();
+	// throw new RuntimeException(e);
+	// }
+	// }
 
 	/**
 	 * Stop the h2db server

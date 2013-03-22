@@ -82,7 +82,7 @@ public class ManagersTest extends AbstractManagerTest {
 		assertEquals(1, counter.size());
 
 	}
-	
+
 	@Test
 	public void testFailToBeginTransaction_SessionClosed()
 			throws ManagerException, InterruptedException {
@@ -105,6 +105,16 @@ public class ManagersTest extends AbstractManagerTest {
 
 		getManagers().getMockEntityManager().add(Arrays.asList(entity1));
 
+	}
+
+	/**
+	 * Check if the server url return unempty list.
+	 */
+	@Test
+	public void testGetServerUrl() {
+		String[] urls = getManagers().getServerUrl();
+		assertNotNull(urls);
+		assertTrue(urls.length > 0);
 	}
 
 	/**
@@ -153,7 +163,8 @@ public class ManagersTest extends AbstractManagerTest {
 		e2.setName("a");
 		getManagers().addAll(Arrays.asList(e1, e2));
 
-		List<MockEntity> list = getManagers().getMockEntityManager().listArchived();
+		List<MockEntity> list = getManagers().getMockEntityManager()
+				.listArchived();
 		assertEquals(0, list.size());
 
 		// Archive the entity #1
