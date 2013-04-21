@@ -1,6 +1,17 @@
-/*
- * Copyright (c) 2011, Patrik Dufresne. All rights reserved.
- * Patrik Dufresne PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+/**
+ * Copyright(C) 2013 Patrik Dufresne Service Logiciel <info@patrikdufresne.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.patrikdufresne.managers.jface;
 
@@ -33,192 +44,180 @@ import com.patrikdufresne.util.Localized;
  */
 public abstract class AbstractAddAction extends Action {
 
-	/**
-	 * Image id.
-	 */
-	public static final String ICON_LIST_ADD_16 = "AbstractAddAction.iconListAdd16";
+    /**
+     * Image id.
+     */
+    public static final String ICON_LIST_ADD_16 = "AbstractAddAction.iconListAdd16";
 
-	static {
-		ImageRegistry imageRegistry = JFaceResources.getImageRegistry();
+    static {
+        ImageRegistry imageRegistry = JFaceResources.getImageRegistry();
 
-		// Define the images used in the standard decorations.
-		imageRegistry.put(ICON_LIST_ADD_16, ImageDescriptor.createFromFile(
-				RemoveAction.class, "images/list-add-16.png"));//$NON-NLS-1$
-	}
+        // Define the images used in the standard decorations.
+        imageRegistry.put(ICON_LIST_ADD_16, ImageDescriptor.createFromFile(RemoveAction.class, "images/list-add-16.png"));//$NON-NLS-1$
+    }
 
-	/**
-	 * Used for localization.
-	 */
-	private static final Localized L = Localized.load(AbstractAddAction.class);
+    /**
+     * Used for localization.
+     */
+    private static final Localized L = Localized.load(AbstractAddAction.class);
 
-	/**
-	 * Managers to used to add the element.
-	 */
-	private Managers managers;
+    /**
+     * Managers to used to add the element.
+     */
+    private Managers managers;
 
-	/**
-	 * Selection provider.
-	 */
-	private ISelectionProvider selectionProvider;
-	/**
-	 * Shell provider.
-	 */
-	private IShellProvider shellProvider;
+    /**
+     * Selection provider.
+     */
+    private ISelectionProvider selectionProvider;
+    /**
+     * Shell provider.
+     */
+    private IShellProvider shellProvider;
 
-	/**
-	 * Create a new Add object action.
-	 * 
-	 * @param provider
-	 *            the selection provider
-	 * @param shellProvider
-	 *            the shell provider use to display message box
-	 * @param factory
-	 *            the factory
-	 */
-	public AbstractAddAction(Managers managers, IShellProvider shellProvider) {
-		this(managers, shellProvider, null);
-	}
+    /**
+     * Create a new Add object action.
+     * 
+     * @param provider
+     *            the selection provider
+     * @param shellProvider
+     *            the shell provider use to display message box
+     * @param factory
+     *            the factory
+     */
+    public AbstractAddAction(Managers managers, IShellProvider shellProvider) {
+        this(managers, shellProvider, null);
+    }
 
-	/**
-	 * Create a new Add object action.
-	 * 
-	 * @param provider
-	 *            the selection provider
-	 * @param shellProvider
-	 *            the shell provider use to display message box
-	 * @param factory
-	 *            the factory
-	 */
-	public AbstractAddAction(Managers managers, IShellProvider shellProvider,
-			ISelectionProvider selectionProvider) {
-		super(null);
-		if (managers == null || shellProvider == null) {
-			throw new NullPointerException();
-		}
-		this.managers = managers;
-		this.shellProvider = shellProvider;
-		this.selectionProvider = selectionProvider;
-		setText(L.get("AbstractAddAction.text"));
-		setImageDescriptor(JFaceResources.getImageRegistry().getDescriptor(
-				ICON_LIST_ADD_16));
-		setEnabled(canCreateObject());
-	}
+    /**
+     * Create a new Add object action.
+     * 
+     * @param provider
+     *            the selection provider
+     * @param shellProvider
+     *            the shell provider use to display message box
+     * @param factory
+     *            the factory
+     */
+    public AbstractAddAction(Managers managers, IShellProvider shellProvider, ISelectionProvider selectionProvider) {
+        super(null);
+        if (managers == null || shellProvider == null) {
+            throw new NullPointerException();
+        }
+        this.managers = managers;
+        this.shellProvider = shellProvider;
+        this.selectionProvider = selectionProvider;
+        setText(L.get("AbstractAddAction.text"));
+        setImageDescriptor(JFaceResources.getImageRegistry().getDescriptor(ICON_LIST_ADD_16));
+        setEnabled(canCreateObject());
+    }
 
-	/**
-	 * Check if it's possible to create the object using the given selection
-	 * context.
-	 * 
-	 * @param selection
-	 *            the selection context
-	 * @return True if it's possible to create an object
-	 */
-	protected abstract boolean canCreateObject();
+    /**
+     * Check if it's possible to create the object using the given selection
+     * context.
+     * 
+     * @param selection
+     *            the selection context
+     * @return True if it's possible to create an object
+     */
+    protected abstract boolean canCreateObject();
 
-	/**
-	 * Create the object.
-	 * 
-	 * @param selection
-	 *            the selection context.
-	 * @return the new object to add using a manager.
-	 */
-	protected abstract List<? extends ManagedObject> createObjects()
-			throws ManagerException;
+    /**
+     * Create the object.
+     * 
+     * @param selection
+     *            the selection context.
+     * @return the new object to add using a manager.
+     */
+    protected abstract List<? extends ManagedObject> createObjects() throws ManagerException;
 
-	/**
-	 * Returns the managers used by this action to create the object.
-	 * 
-	 * @return
-	 */
-	public Managers getManagers() {
-		return this.managers;
-	}
+    /**
+     * Returns the managers used by this action to create the object.
+     * 
+     * @return
+     */
+    public Managers getManagers() {
+        return this.managers;
+    }
 
-	/**
-	 * Return the selection provider or null if not set.
-	 * 
-	 * @return
-	 */
-	public ISelectionProvider getSelectionProvider() {
-		return this.selectionProvider;
-	}
+    /**
+     * Return the selection provider or null if not set.
+     * 
+     * @return
+     */
+    public ISelectionProvider getSelectionProvider() {
+        return this.selectionProvider;
+    }
 
-	/**
-	 * Return the shell provider given in the constructor.
-	 * 
-	 * @return
-	 */
-	public IShellProvider getShellProvider() {
-		return this.shellProvider;
-	}
+    /**
+     * Return the shell provider given in the constructor.
+     * 
+     * @return
+     */
+    public IShellProvider getShellProvider() {
+        return this.shellProvider;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jface.action.Action#run()
-	 */
-	@Override
-	public void run() {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.eclipse.jface.action.Action#run()
+     */
+    @Override
+    public void run() {
 
-		if (!canCreateObject()) {
-			DetailMessageDialog.openWarning(this.shellProvider.getShell(),
-					getText(), L.get("AbstractAddAction.cantCreateObject"));
-			return;
-		}
+        if (!canCreateObject()) {
+            DetailMessageDialog.openWarning(this.shellProvider.getShell(), getText(), L.get("AbstractAddAction.cantCreateObject"));
+            return;
+        }
 
-		// An error occurred
-		final List<? extends ManagedObject> list;
-		try {
-			list = createObjects();
-		} catch (ManagerException e) {
-			StringWriter sw = new StringWriter();
-			e.printStackTrace(new PrintWriter(sw));
-			DetailMessageDialog.openDetailWarning(
-					this.shellProvider.getShell(), getText(),
-					L.get("AbstractAddAction.cantCreateObject"),
-					L.get("AbstractAddAction.errorOccurred"), sw.toString());
-			return;
-		}
-		if (list == null || list.isEmpty()) {
-			DetailMessageDialog.openWarning(this.shellProvider.getShell(),
-					getText(), L.get("AbstractAddAction.cantCreateObject"));
-			return;
-		}
+        // An error occurred
+        final List<? extends ManagedObject> list;
+        try {
+            list = createObjects();
+        } catch (ManagerException e) {
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            DetailMessageDialog.openDetailWarning(this.shellProvider.getShell(), getText(), L.get("AbstractAddAction.cantCreateObject"), L
+                    .get("AbstractAddAction.errorOccurred"), sw.toString());
+            return;
+        }
+        if (list == null || list.isEmpty()) {
+            DetailMessageDialog.openWarning(this.shellProvider.getShell(), getText(), L.get("AbstractAddAction.cantCreateObject"));
+            return;
+        }
 
-		// Add objects
-		try {
-			this.managers.addAll(list);
-		} catch (ManagerException e) {
-			StringWriter sw = new StringWriter();
-			e.printStackTrace(new PrintWriter(sw));
-			DetailMessageDialog.openDetailWarning(
-					this.shellProvider.getShell(), getText(),
-					L.get("AbstractAddAction.cantCreateObject"),
-					L.get("AbstractAddAction.errorOccurred"), sw.toString());
-		}
+        // Add objects
+        try {
+            this.managers.addAll(list);
+        } catch (ManagerException e) {
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            DetailMessageDialog.openDetailWarning(this.shellProvider.getShell(), getText(), L.get("AbstractAddAction.cantCreateObject"), L
+                    .get("AbstractAddAction.errorOccurred"), sw.toString());
+        }
 
-		// Select object in the viewer
-		Display.getDefault().asyncExec(new Runnable() {
-			@Override
-			public void run() {
-				selectObjects(list);
-			}
-		});
+        // Select object in the viewer
+        Display.getDefault().asyncExec(new Runnable() {
+            @Override
+            public void run() {
+                selectObjects(list);
+            }
+        });
 
-	}
+    }
 
-	/**
-	 * Called to select into the selection provider if define.
-	 * 
-	 * @param list
-	 */
-	protected void selectObjects(Collection<? extends ManagedObject> list) {
-		if (getSelectionProvider() instanceof StructuredViewer) {
-			((StructuredViewer) getSelectionProvider()).setSelection(
-					new StructuredSelection(list.toArray()), true);
-		} else {
-			getSelectionProvider().setSelection(
-					new StructuredSelection(list.toArray()));
-		}
-	}
+    /**
+     * Called to select into the selection provider if define.
+     * 
+     * @param list
+     */
+    protected void selectObjects(Collection<? extends ManagedObject> list) {
+        if (getSelectionProvider() instanceof StructuredViewer) {
+            ((StructuredViewer) getSelectionProvider()).setSelection(new StructuredSelection(list.toArray()), true);
+        } else {
+            getSelectionProvider().setSelection(new StructuredSelection(list.toArray()));
+        }
+    }
 
 }
