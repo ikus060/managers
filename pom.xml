@@ -6,6 +6,9 @@
 	<version>1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>com.patrikdufresne.managers-parent</name>
+	<scm>
+		<developerConnection>scm:git:ssh://gitosis@tintaglia.patrikdufresne.com/managers.git</developerConnection>
+	</scm>
 	<build>
 		<pluginManagement>
 			<plugins>
