@@ -2,3 +2,4 @@ target/
 *~
 *.h2.db
 *.trace.db
+*.lock.db
