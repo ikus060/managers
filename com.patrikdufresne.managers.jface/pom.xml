@@ -13,7 +13,7 @@
 	<repositories>
 		<repository>
 			<id>patrikdufresne</id>
-			<url>http://patrikdufresne.com/maven2/repo</url>
+			<url>http://nexus.patrikdufresne.com/content/groups/public/</url>
 		</repository>
 	</repositories>
 	<dependencies>
