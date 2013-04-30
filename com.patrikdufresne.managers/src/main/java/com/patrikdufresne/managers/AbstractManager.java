@@ -23,8 +23,7 @@ import java.util.List;
 import org.hibernate.criterion.Projections;
 
 /**
- * This implementation of {@link IManager} provide basic feature to make it
- * easier to implement the interface.
+ * This implementation of {@link IManager} provide basic feature to make it easier to implement the interface.
  */
 public abstract class AbstractManager<T extends ManagedObject> implements IManager<T> {
     /**
@@ -41,8 +40,7 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
     }
 
     /**
-     * This implementation add the given list of object to the database using
-     * Hibernate.
+     * This implementation add the given list of object to the database using Hibernate.
      * 
      * @see com.patrikdufresne.managers.IManager#add(java.util.Collection)
      */
@@ -80,11 +78,9 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
     }
 
     /**
-     * This implementation add the observer to the list of observers getting
-     * notify.
+     * This implementation add the observer to the list of observers getting notify.
      * 
-     * @see com.patrikdufresne.managers.IManager#addObserver(int,
-     *      com.patrikdufresne.managers.IManagerObserver)
+     * @see com.patrikdufresne.managers.IManager#addObserver(int, com.patrikdufresne.managers.IManagerObserver)
      */
     @Override
     public void addObserver(int eventType, IManagerObserver observer) {
@@ -130,8 +126,7 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
     }
 
     /**
-     * This implementation return a complete list of all object managed by this
-     * class.
+     * This implementation return a complete list of all object managed by this class.
      * 
      * @see com.patrikdufresne.managers.IManager#list()
      */
@@ -147,8 +142,7 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
     }
 
     /**
-     * Subclasses may implement this function to execute code after adding the
-     * object to database.
+     * Subclasses may implement this function to execute code after adding the object to database.
      * 
      * @param t
      *            the object added
@@ -159,8 +153,7 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
     }
 
     /**
-     * Subclasses may implement this function to execute code after adding the
-     * objects to database.
+     * Subclasses may implement this function to execute code after adding the objects to database.
      * 
      * @param s
      *            the objects added
@@ -187,8 +180,7 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
     }
 
     /**
-     * Sub-class may implement this function to validate the insertion. Notice :
-     * the transaction is already open.
+     * Sub-class may implement this function to validate the insertion. Notice : the transaction is already open.
      * 
      * @param t
      */
@@ -201,8 +193,7 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
     }
 
     /**
-     * Sub-class may implement this function to validate the removal. Notice :
-     * the transaction is already open.
+     * Sub-class may implement this function to validate the removal. Notice : the transaction is already open.
      * 
      * @param t
      */
@@ -215,8 +206,7 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
     }
 
     /**
-     * Sub-class may implement this function to validate the update. Notice :
-     * the transaction is already open.
+     * Sub-class may implement this function to validate the update. Notice : the transaction is already open.
      * 
      * @param t
      */
@@ -263,8 +253,7 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
     /**
      * This implementation remote the observer.
      * 
-     * @see com.patrikdufresne.managers.IManager#removeObserver(int,
-     *      com.patrikdufresne.managers.IManagerObserver)
+     * @see com.patrikdufresne.managers.IManager#removeObserver(int, com.patrikdufresne.managers.IManagerObserver)
      */
     @Override
     public void removeObserver(int eventType, IManagerObserver observer) {
@@ -301,6 +290,10 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
                 while (iter.hasNext()) {
                     T t = iter.next();
                     preUpdateObject(t);
+                    if (t.getCreationDate() == null) {
+                        // Wee have no choice to set the creation date again if it was erase.
+                        t.setCreationDate(date);
+                    }
                     t.setModificationDate(date);
                     ManagerContext.getDefaultSession().update(t);
                     postUpdateObject(t);
