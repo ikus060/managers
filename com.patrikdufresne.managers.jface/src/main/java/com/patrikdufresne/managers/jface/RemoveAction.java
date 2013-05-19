@@ -37,9 +37,8 @@ import com.patrikdufresne.util.Localized;
 /**
  * Action to remove object using managers.
  * <p>
- * The confirmation message displayed by this action can be personalized using
- * the {@link #setConfirmationMessage(String)} and
- * {@link #setConfirmationShortDetail(String)}.
+ * The confirmation message displayed by this action can be personalized using the
+ * {@link #setConfirmationMessage(String)} and {@link #setConfirmationShortDetail(String)}.
  * 
  * @author Patrik Dufresne
  * 
@@ -56,14 +55,14 @@ public class RemoveAction extends Action {
     private static final Localized L = Localized.load(RemoveAction.class);
 
     /**
-     * Property name of this action object (value <code>"object"</code>). The
-     * object property define the entity to be delete.
+     * Property name of this action object (value <code>"object"</code>). The object property define the entity to be
+     * delete.
      */
     public static final String OBJECT = "object"; //$NON-NLS-1$
 
     /**
-     * Property name of this action objects (value <code>"objects"</code>). The
-     * objects property define the entities to be deleted.
+     * Property name of this action objects (value <code>"objects"</code>). The objects property define the entities to
+     * be deleted.
      */
     public static final String OBJECTS = "objects"; //$NON-NLS-1$
 
@@ -170,7 +169,7 @@ public class RemoveAction extends Action {
         }
 
         // Confirmation
-        DetailMessageDialog dlg = new DetailMessageDialog(this.shellProvider.getShell(), L.get("RemoveAction.confirmRemove.title"), //$NON-NLS-1$
+        DetailMessageDialog dlg = new DetailMessageDialog(this.shellProvider.getShell(), L.get("RemoveAction.text"), //$NON-NLS-1$
                 null,
                 this.message != null ? this.message : L.get("RemoveAction.confirmRemove.message"), //$NON-NLS-1$
                 this.shortDetail != null ? this.shortDetail : L.get("RemoveAction.confirmRemove.shortDetail"), null, //$NON-NLS-1$
@@ -187,20 +186,9 @@ public class RemoveAction extends Action {
         try {
             this.managers.removeAll(this.objects);
         } catch (ClassCastException e) {
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-            DetailMessageDialog.openDetailWarning(this.shellProvider.getShell(), L.get("RemoveAction.confirmRemove.title"), L
-                    .get("RemoveAction.cantRemoveObject"), //$NON-NLS-1$
-                    L.get("RemoveAction.invalidObject"), //$NON-NLS-1$
-                    sw.toString());
-            return;
+            RemoveArchiveAction.handleException(shellProvider.getShell(), RemoveArchiveAction.REMOVE_ID, e);
         } catch (ManagerException e) {
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-            DetailMessageDialog.openDetailWarning(this.shellProvider.getShell(), L.get("RemoveAction.confirmRemove.title"), L
-                    .get("RemoveAction.cantRemoveObject"), //$NON-NLS-1$
-                    L.get("RemoveAction.errorOccurred"), //$NON-NLS-1$
-                    sw.toString());
+            RemoveArchiveAction.handleException(shellProvider.getShell(), RemoveArchiveAction.REMOVE_ID, e);
         }
 
     }

@@ -96,7 +96,7 @@ public class ManagedObject implements java.io.Serializable {
      * @return Returns the creationDate.
      * @uml.property name="creationDate"
      */
-    @Column(nullable = false)
+    @Column(nullable = true)
     @Temporal(TemporalType.TIMESTAMP)
     public Date getCreationDate() {
         return this.creationDate;
@@ -120,7 +120,7 @@ public class ManagedObject implements java.io.Serializable {
      * @return Returns the modificationDate.
      * @uml.property name="modificationDate"
      */
-    @Column(nullable = false)
+    @Column(nullable = true)
     @Temporal(TemporalType.TIMESTAMP)
     public Date getModificationDate() {
         return this.modificationDate;

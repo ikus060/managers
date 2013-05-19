@@ -29,6 +29,7 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.window.IShellProvider;
+import org.eclipse.swt.widgets.Shell;
 
 import com.patrikdufresne.jface.dialogs.DetailMessageDialog;
 import com.patrikdufresne.managers.ArchivableObject;
@@ -49,7 +50,7 @@ public class RemoveArchiveAction extends Action {
      * 
      * @See MessageDialogWithToggle
      */
-    private static final int ARCHIVE_ID = IDialogConstants.INTERNAL_ID + 1;
+    public static final int ARCHIVE_ID = IDialogConstants.INTERNAL_ID + 1;
 
     /**
      * Image id.
@@ -62,8 +63,8 @@ public class RemoveArchiveAction extends Action {
     private static final Localized L = Localized.load(RemoveArchiveAction.class);
 
     /**
-     * Property name of this action objects (value <code>"objects"</code>). The
-     * objects property define the entities to be deleted.
+     * Property name of this action objects (value <code>"objects"</code>). The objects property define the entities to
+     * be deleted.
      */
     public static final String OBJECTS = "objects"; //$NON-NLS-1$
 
@@ -72,13 +73,38 @@ public class RemoveArchiveAction extends Action {
      * 
      * @See MessageDialogWithToggle
      */
-    private static final int REMOVE_ID = IDialogConstants.INTERNAL_ID;
+    public static final int REMOVE_ID = IDialogConstants.INTERNAL_ID;
 
     static {
         ImageRegistry imageRegistry = JFaceResources.getImageRegistry();
 
         // Define the images used in the standard decorations.
         imageRegistry.put(ICON_LIST_REMOVE_16, ImageDescriptor.createFromFile(RemoveAction.class, "images/list-remove-16.png"));//$NON-NLS-1$
+    }
+
+    /**
+     * This function is used to display an error message to the user.
+     * 
+     * @param e
+     *            the exception.
+     */
+    public static void handleException(Shell shell, int operation, Exception e) {
+
+        String message = operation == REMOVE_ID ? L.get("RemoveArchiveAction.cantRemoveObject") //$NON-NLS-1$
+                : L.get("RemoveArchiveAction.cantArchiveObject"); //$NON-NLS-1$
+        String shortDetail = L.get("RemoveArchiveAction.unknownException"); //$NON-NLS-1$
+
+        // Check the cause to provide a better error message
+        if (e instanceof ManagerException && ((ManagerException) e).isConstraintViolationException()) {
+            shortDetail = L.get("RemoveArchiveAction.constraintViolationException"); //$NON-NLS-1$
+        }
+
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        DetailMessageDialog.openDetailWarning(shell, L.get("RemoveArchiveAction.exception.title"), //$NON-NLS-1$
+                message,
+                shortDetail,
+                sw.toString());
     }
 
     /**
@@ -119,8 +145,7 @@ public class RemoveArchiveAction extends Action {
     /**
      * Check if this action can be run.
      * <p>
-     * This implementation check if the objects list is set and if it contains
-     * archivable objects.
+     * This implementation check if the objects list is set and if it contains archivable objects.
      * 
      * @return True if the action can be run.
      */
@@ -145,31 +170,6 @@ public class RemoveArchiveAction extends Action {
      */
     public List<ManagedObject> getObjects() {
         return this.objects;
-    }
-
-    /**
-     * This function is used to display an error message to the user.
-     * 
-     * @param e
-     *            the exception.
-     */
-    private void handleException(int operation, ManagerException e) {
-
-        String message = operation == REMOVE_ID ? L.get("RemoveArchiveAction.cantRemoveObject") //$NON-NLS-1$
-                : L.get("RemoveArchiveAction.cantArchiveObject"); //$NON-NLS-1$
-        String shortDetail = L.get("RemoveArchiveAction.unknownException"); //$NON-NLS-1$
-
-        // Check the cause to provide a better error message
-        if (e.isConstraintViolationException()) {
-            shortDetail = L.get("RemoveArchiveAction.constraintViolationException"); //$NON-NLS-1$
-        }
-
-        StringWriter sw = new StringWriter();
-        e.printStackTrace(new PrintWriter(sw));
-        DetailMessageDialog.openDetailWarning(this.shellProvider.getShell(), L.get("RemoveArchiveAction.exception.title"), //$NON-NLS-1$
-                message,
-                shortDetail,
-                sw.toString());
     }
 
     /*
@@ -216,7 +216,8 @@ public class RemoveArchiveAction extends Action {
             }
         } catch (ManagerException e) {
 
-            handleException(operation, e);
+            // Show error message.
+            handleException(shellProvider.getShell(), operation, e);
 
         }
         // TODO release the object array

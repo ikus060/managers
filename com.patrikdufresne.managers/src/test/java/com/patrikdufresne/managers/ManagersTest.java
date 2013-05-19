@@ -242,6 +242,31 @@ public class ManagersTest extends AbstractManagerTest {
      * @throws ManagerException
      */
     @Test
+    public void testRemove_withCreationDateNull() throws ManagerException {
+
+        // Add entity
+        MockEntity entity = new MockEntity();
+        entity.setName("a");
+        getManagers().getMockEntityManager().add(Arrays.asList(entity));
+        assertEquals("Wrong number of entities", 1, getManagers().getMockEntityManager().list().size());
+
+        // Set dates to null
+        entity.setCreationDate(null);
+        entity.setModificationDate(null);
+
+        // Remove entity
+        getManagers().removeAll(Arrays.asList(entity));
+
+        assertEquals("Wrong number of entities", 0, getManagers().getMockEntityManager().list().size());
+
+    }
+
+    /**
+     * Test if the manager generate an event when an entity is removed.
+     * 
+     * @throws ManagerException
+     */
+    @Test
     public void testRemove_withEntity_ExpectEvent() throws ManagerException {
 
         // Add entity
@@ -264,8 +289,8 @@ public class ManagersTest extends AbstractManagerTest {
     }
 
     /**
-     * Test if the manager generate an event when an entity is updated. Also
-     * check if other reference of the same object is updated.
+     * Test if the manager generate an event when an entity is updated. Also check if other reference of the same object
+     * is updated.
      * 
      * @throws ManagerException
      */
@@ -305,8 +330,8 @@ public class ManagersTest extends AbstractManagerTest {
     }
 
     /**
-     * Test the behavior when a ManagerException is raised within a transaction.
-     * The session should be rollback and close.
+     * Test the behavior when a ManagerException is raised within a transaction. The session should be rollback and
+     * close.
      * 
      * @throws ManagerException
      */
@@ -342,12 +367,10 @@ public class ManagersTest extends AbstractManagerTest {
     }
 
     /**
-     * Check if an exception thrown within a different thread cause any problem
-     * in the main thread.
+     * Check if an exception thrown within a different thread cause any problem in the main thread.
      * <p>
-     * In this test, an insert statement is run in a thread so the table is
-     * locked. When the exception is thrown, the lock should be release so the
-     * main thread is able to update the table.
+     * In this test, an insert statement is run in a thread so the table is locked. When the exception is thrown, the
+     * lock should be release so the main thread is able to update the table.
      * 
      * @throws ManagerException
      * @throws InterruptedException
@@ -386,8 +409,8 @@ public class ManagersTest extends AbstractManagerTest {
     }
 
     /**
-     * Test the behavior of the managers when an exception occurred within the
-     * transaction. The expected behavior is a session rollback and close.
+     * Test the behavior of the managers when an exception occurred within the transaction. The expected behavior is a
+     * session rollback and close.
      * 
      * @throws ManagerException
      */

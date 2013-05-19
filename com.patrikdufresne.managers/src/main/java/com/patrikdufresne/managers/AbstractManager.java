@@ -15,6 +15,7 @@
  */
 package com.patrikdufresne.managers;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
