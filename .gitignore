@@ -3,3 +3,6 @@ target/
 *.h2.db
 *.trace.db
 *.lock.db
+.project
+.classpath
+.settings
