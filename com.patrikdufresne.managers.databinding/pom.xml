@@ -59,6 +59,7 @@
 				</executions>
 				<configuration>
 					<configFile>formatter.xml</configFile>
+					<lineEnding>CRLF</lineEnding>
 				</configuration>
 				<dependencies>
 					<dependency>
