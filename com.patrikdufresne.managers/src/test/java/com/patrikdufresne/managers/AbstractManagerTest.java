@@ -52,8 +52,8 @@ public abstract class AbstractManagerTest {
     @After
     public void closeDatabase() throws Exception {
         if (managers != null) {
-            managers.getDatabaseUrl().localfile().delete();
             managers.dispose();
+            managers.getDatabaseUrl().localfile().delete();
         }
     }
 

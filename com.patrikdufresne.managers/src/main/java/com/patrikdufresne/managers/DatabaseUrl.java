@@ -103,13 +103,18 @@ public class DatabaseUrl {
 
     /**
      * Return a string representation of a local database url.
+     * 
      * @return
      */
     public String getAbsolutePath() {
         if (!isLocal()) {
             return null;
         }
-        return new File(path).getAbsolutePath();
+        try {
+            return new File(path).getCanonicalPath();
+        } catch (IOException e) {
+            return new File(path).getAbsolutePath();
+        }
     }
 
     /**
@@ -142,8 +147,7 @@ public class DatabaseUrl {
     }
 
     /**
-     * This function return a file object based on the url path. If the url is
-     * not local, this function return null.
+     * This function return a file object based on the url path. If the url is not local, this function return null.
      * 
      * @return
      */
@@ -218,8 +222,7 @@ public class DatabaseUrl {
     }
 
     /**
-     * This function test if the remote url is valid. If not, it throw an
-     * exception.
+     * This function test if the remote url is valid. If not, it throw an exception.
      */
     private void testRemote() {
         // TODO complete this

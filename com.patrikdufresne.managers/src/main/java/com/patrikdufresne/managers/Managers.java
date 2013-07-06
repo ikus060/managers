@@ -20,6 +20,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Properties;
 
 import org.h2.Driver;
@@ -54,8 +56,8 @@ import org.hibernate.service.ServiceRegistryBuilder;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 
 /**
- * This class is used to keep track of the Hibernate context. It's intended to
- * provide a single object to execute any database operation.
+ * This class is used to keep track of the Hibernate context. It's intended to provide a single object to execute any
+ * database operation.
  * 
  * @author Patrik Dufresne
  * 
@@ -90,6 +92,31 @@ public abstract class Managers {
             url.test();
         } catch (IOException e) {
             throw new HibernateException(e);
+        }
+    }
+
+    /**
+     * Used to stop the H2DB server started using auto server mode.
+     */
+    private void stopH2dbServer(DatabaseUrl url) {
+        try {
+            // Get the list of server using reflection
+            Field f = TcpServer.class.getDeclaredField("SERVERS");
+            f.setAccessible(true);
+            Map<Integer, TcpServer> servers = (Map<Integer, TcpServer>) f.get(null);
+
+            // Find matching server using reflection
+            for (TcpServer s : servers.values()) {
+                Field f2 = s.getClass().getDeclaredField("keyDatabase");
+                f2.setAccessible(true);
+                Object value = f2.get(s);
+                if (url.getAbsolutePath().equals(value)) {
+                    s.stop();
+                }
+            }
+        } catch (Exception e) {
+            // Swallow
+            return;
         }
     }
 
@@ -222,14 +249,13 @@ public abstract class Managers {
     /**
      * Archive the given objects.
      * <p>
-     * This function shall be used to avoid calling the specific implementation
-     * of the manager.
+     * This function shall be used to avoid calling the specific implementation of the manager.
      * 
      * @param list
      *            the objects to be archived.
      * @throws ManagerException
-     *             If the object is not archivable or if the associated manager
-     *             doesn't implement the IArchivableManager.
+     *             If the object is not archivable or if the associated manager doesn't implement the
+     *             IArchivableManager.
      */
     public void archiveAll(final Collection<? extends ManagedObject> list) throws ManagerException {
         // Open one transaction
@@ -252,16 +278,15 @@ public abstract class Managers {
     }
 
     /**
-     * Add the given observer to the list of observer being notify when an
-     * object of the given class type is added, updated or deleted.
+     * Add the given observer to the list of observer being notify when an object of the given class type is added,
+     * updated or deleted.
      */
     public void addObserver(int eventType, Class<?> cls, IManagerObserver observer) {
         this.eventManager.hook(eventType, cls, observer);
     }
 
     /**
-     * Set configuration properties. Sub classes may access the database URL
-     * using {@link #getDatabaseUrl()}.
+     * Set configuration properties. Sub classes may access the database URL using {@link #getDatabaseUrl()}.
      * 
      * @param config
      *            the Configuration
@@ -326,6 +351,10 @@ public abstract class Managers {
             this.factory.close();
         }
         this.factory = null;
+        // FIXME This should be remove in later version to be database agnostic
+        if (url.localfile() != null) {
+            stopH2dbServer(url);
+        }
     }
 
     /**
@@ -368,8 +397,7 @@ public abstract class Managers {
     }
 
     /**
-     * Return a list of network interface. Used to retrieve a list of valid ip
-     * address.
+     * Return a list of network interface. Used to retrieve a list of valid ip address.
      * 
      * @return
      */
@@ -511,8 +539,7 @@ public abstract class Managers {
     }
 
     /**
-     * This function is used to run a runnable within a safe context for
-     * hibernate session.
+     * This function is used to run a runnable within a safe context for hibernate session.
      * 
      * @param runnable
      * @throws ManagerException
@@ -641,12 +668,10 @@ public abstract class Managers {
     }
 
     /**
-     * This function is called by the managers when the database shema may
-     * required to be updated. Sub-classes implementing this function should
-     * detect if an update is required and update the shema.
+     * This function is called by the managers when the database shema may required to be updated. Sub-classes
+     * implementing this function should detect if an update is required and update the shema.
      * <p>
-     * Sub-classes should use {@link DatabaseUpdateHelper} to get the metadata
-     * and to alter it.
+     * Sub-classes should use {@link DatabaseUpdateHelper} to get the metadata and to alter it.
      * 
      * @param factory
      */
@@ -655,11 +680,9 @@ public abstract class Managers {
     }
 
     /**
-     * This function is called by the manager when the database schema is open
-     * in validation mode.
+     * This function is called by the manager when the database schema is open in validation mode.
      * <p>
-     * Sub-classes should use the {@link DatabaseUpdateHelper} to get the
-     * metadata to be validated
+     * Sub-classes should use the {@link DatabaseUpdateHelper} to get the metadata to be validated
      * 
      * @param factory
      */
