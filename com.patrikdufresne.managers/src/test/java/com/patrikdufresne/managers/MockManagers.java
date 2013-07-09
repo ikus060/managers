@@ -17,10 +17,6 @@ package com.patrikdufresne.managers;
 
 import org.hibernate.cfg.Configuration;
 
-import com.patrikdufresne.managers.DatabaseUrl;
-import com.patrikdufresne.managers.IManager;
-import com.patrikdufresne.managers.Managers;
-
 /**
  * Managers for unit test
  * 
@@ -41,8 +37,8 @@ public class MockManagers extends Managers {
      *            the database url
      * @throws ManagerException
      */
-    public MockManagers(DatabaseUrl url) throws ManagerException {
-        super(url);
+    public MockManagers(Configuration config) throws ManagerException {
+        super(config);
     }
 
     /**

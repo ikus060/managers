@@ -15,36 +15,16 @@
  */
 package com.patrikdufresne.managers;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Properties;
 
-import org.h2.Driver;
-import org.h2.server.TcpServer;
-import org.h2.tools.Server;
-import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.SessionFactoryObserver;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
-import org.hibernate.context.internal.ThreadLocalSessionContext;
-import org.hibernate.dialect.H2Dialect;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventType;
@@ -56,69 +36,10 @@ import org.hibernate.service.ServiceRegistryBuilder;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 
 /**
- * This class is used to keep track of the Hibernate context. It's intended to provide a single object to execute any
- * database operation.
- * 
  * @author Patrik Dufresne
  * 
  */
 public abstract class Managers {
-
-    /**
-     * Open the database in creation mode.
-     */
-    private static final String CREATE = "create";
-
-    /**
-     * Open the database in update mode
-     */
-    private static final String UPDATE = "update";
-
-    /**
-     * Open the database in validate mode.
-     */
-    private static final String VALIDATE = "validate";
-
-    /**
-     * Check the url object. Generate an exception in case it's invalid.
-     * 
-     * @param url
-     */
-    private static void checkUrl(DatabaseUrl url) {
-        if (url == null) {
-            throw new NullPointerException();
-        }
-        try {
-            url.test();
-        } catch (IOException e) {
-            throw new HibernateException(e);
-        }
-    }
-
-    /**
-     * Used to stop the H2DB server started using auto server mode.
-     */
-    private void stopH2dbServer(DatabaseUrl url) {
-        try {
-            // Get the list of server using reflection
-            Field f = TcpServer.class.getDeclaredField("SERVERS");
-            f.setAccessible(true);
-            Map<Integer, TcpServer> servers = (Map<Integer, TcpServer>) f.get(null);
-
-            // Find matching server using reflection
-            for (TcpServer s : servers.values()) {
-                Field f2 = s.getClass().getDeclaredField("keyDatabase");
-                f2.setAccessible(true);
-                Object value = f2.get(s);
-                if (url.getAbsolutePath().equals(value)) {
-                    s.stop();
-                }
-            }
-        } catch (Exception e) {
-            // Swallow
-            return;
-        }
-    }
 
     /**
      * The event table.
@@ -160,59 +81,49 @@ public abstract class Managers {
 
     };
 
-    private String mode;
-
     /**
-     * This session factory observer is used to stop server.
-     */
-    private SessionFactoryObserver sessionFactoryObserver = new SessionFactoryObserver() {
-
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public void sessionFactoryClosed(SessionFactory factory) {
-            // stopServer();
-        }
-
-        @Override
-        public void sessionFactoryCreated(SessionFactory factory) {
-            // Validate or update the database
-            if (mode.equals(VALIDATE)) {
-                validateDatabase(factory);
-            } else if (mode.equals(UPDATE)) {
-                updateDatabase(factory);
-            }
-        }
-
-    };
-
-    private DatabaseUrl url;
-
-    /**
-     * Create a new managers instance using the given database URL.
+     * Create a new instance of managers
      * 
-     * @param url
-     *            the database URL
+     * @param config
+     *            the database configuration.
      * @throws ManagerException
      */
-    public Managers(DatabaseUrl url) throws ManagerException {
+    public Managers(final Configuration config) throws ManagerException {
 
-        // Test the url
-        checkUrl(url);
-        this.url = url;
+        /*
+         * Set a session listener
+         */
+        config.setSessionFactoryObserver(new SessionFactoryObserver() {
 
-        // Allow sub classes to add classes
-        Configuration config = new Configuration();
+            @Override
+            public void sessionFactoryClosed(SessionFactory factory) {
+                // Nothing to do
+
+            }
+
+            @Override
+            public void sessionFactoryCreated(SessionFactory factory) {
+                // Validate or update the database
+                if ("create".equals(config.getProperty(Environment.HBM2DDL_AUTO))) {
+                    updateDatabase(factory);
+                } else {
+                    validateDatabase(factory);
+                }
+            }
+
+        });
+
+        /*
+         * Configure the manager
+         */
         configure(config);
 
-        ServiceRegistry serviceRegistry = new ServiceRegistryBuilder(new BootstrapServiceRegistryBuilder().with(integrator).build()).applySettings(
+        ServiceRegistry serviceRegistry = new ServiceRegistryBuilder(new BootstrapServiceRegistryBuilder().with(this.integrator).build()).applySettings(
                 config.getProperties()).buildServiceRegistry();
 
         try {
             this.factory = config.buildSessionFactory(serviceRegistry);
         } catch (Exception e) {
-            // If the server got started, let stop it
-            // stopServer();
             throw new ManagerException(e);
         }
 
@@ -223,7 +134,6 @@ public abstract class Managers {
 
         // Create the event manager
         this.eventManager = new EventManager();
-
     }
 
     /**
@@ -244,6 +154,14 @@ public abstract class Managers {
                 }
             }
         });
+    }
+
+    /**
+     * Add the given observer to the list of observer being notify when an object of the given class type is added,
+     * updated or deleted.
+     */
+    public void addObserver(int eventType, Class<?> cls, IManagerObserver observer) {
+        this.eventManager.hook(eventType, cls, observer);
     }
 
     /**
@@ -278,14 +196,6 @@ public abstract class Managers {
     }
 
     /**
-     * Add the given observer to the list of observer being notify when an object of the given class type is added,
-     * updated or deleted.
-     */
-    public void addObserver(int eventType, Class<?> cls, IManagerObserver observer) {
-        this.eventManager.hook(eventType, cls, observer);
-    }
-
-    /**
      * Set configuration properties. Sub classes may access the database URL using {@link #getDatabaseUrl()}.
      * 
      * @param config
@@ -293,54 +203,9 @@ public abstract class Managers {
      */
     protected void configure(Configuration config) {
 
-        // Use H2 DB dialect
-        config.setProperty(Environment.DIALECT, H2Dialect.class.getCanonicalName());
-
-        // Use H2 DB driver
-        config.setProperty(Environment.DRIVER, Driver.class.getCanonicalName());
-
-        // Set default username
-        config.setProperty(Environment.USER, "sa");//$NON-NLS-1$
-
-        // Set default password
-        config.setProperty(Environment.PASS, "");//$NON-NLS-1$
-
-        // Set default shema
-        config.setProperty(Environment.DEFAULT_SCHEMA, "PUBLIC");//$NON-NLS-1$
-
-        // Set a driver managed connection pool (to avoid usgin connection pool)
-        config.setProperty(Environment.CONNECTION_PROVIDER, "org.hibernate.connection.DriverManagerConnectionProvider");
-
-        // Enable Hibernate's automatic session context management
-        config.setProperty(Environment.CURRENT_SESSION_CONTEXT_CLASS, ThreadLocalSessionContext.class.getCanonicalName());//$NON-NLS-1$ 
-
         // Display SQL statement
         config.setProperty(Environment.SHOW_SQL, "true");//$NON-NLS-1$ //$NON-NLS-2$
 
-        // Set a session listener
-        config.setSessionFactoryObserver(this.sessionFactoryObserver);
-
-        // Set URL according to database url data
-        if (url.isLocal()) {
-            // Get the file location
-            File file = url.localfile();
-            config.setProperty(Environment.URL, "jdbc:h2://" + url.getAbsolutePath() + ";AUTO_SERVER=TRUE"); //$NON-NLS-1$
-
-            // Drop and re-create the database schema on startup
-            if (!file.exists()) {
-                this.mode = CREATE;
-                config.setProperty(Environment.HBM2DDL_AUTO, "create");//$NON-NLS-1$
-            } else {
-                this.mode = UPDATE;
-            }
-
-            // Need to open a H2DB server locallysFs
-            // startServer(file.getParent());
-        } else {
-            // Set the connection string
-            config.setProperty(Environment.URL, url.toString());
-            this.mode = VALIDATE;
-        }
     }
 
     /**
@@ -351,10 +216,6 @@ public abstract class Managers {
             this.factory.close();
         }
         this.factory = null;
-        // FIXME This should be remove in later version to be database agnostic
-        if (url.localfile() != null) {
-            stopH2dbServer(url);
-        }
     }
 
     /**
@@ -388,53 +249,6 @@ public abstract class Managers {
     }
 
     /**
-     * Return the database url previously provided in the constructor.
-     * 
-     * @return
-     */
-    public DatabaseUrl getDatabaseUrl() {
-        return this.url;
-    }
-
-    /**
-     * Return a list of network interface. Used to retrieve a list of valid ip address.
-     * 
-     * @return
-     */
-    private String[] getInterfaces() {
-        try {
-            LinkedList<String> adresses = new LinkedList<String>();
-            Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-
-            while (e.hasMoreElements()) {
-                NetworkInterface ni = e.nextElement();
-                Enumeration<InetAddress> e2 = ni.getInetAddresses();
-
-                while (e2.hasMoreElements()) {
-                    // Convert to dot representation
-                    InetAddress ip = e2.nextElement();
-                    if (!(ip instanceof Inet4Address)) {
-                        continue;
-                    }
-                    byte[] ipAddr = ip.getAddress();
-                    String ipAddrStr = ""; //$NON-NLS-1$
-                    for (int i = 0; i < ipAddr.length; i++) {
-                        if (i > 0) {
-                            ipAddrStr += "."; //$NON-NLS-1$
-                        }
-                        ipAddrStr += ipAddr[i] & 0xFF;
-                    }
-                    adresses.add(ipAddrStr);
-                }
-            }
-            String[] array = new String[adresses.size()];
-            return adresses.toArray(array);
-        } catch (Exception e) {
-            return new String[0];
-        }
-    }
-
-    /**
      * Return the manager for the given object class.
      * 
      * @param managers
@@ -444,48 +258,6 @@ public abstract class Managers {
      * @return the manager or null if not found.
      */
     public abstract IManager<ManagedObject> getManagerForClass(Class<? extends ManagedObject> clazz);
-
-    /**
-     * Returns a list of possible url to connect remotely to the h2db server.
-     * 
-     * @return
-     */
-    public String[] getServerUrl() {
-        if (this.url != null && this.url.getName() != null && this.url.isLocal()) {
-            // FIXME the following is H2DB specific.
-            String name = this.url.getAbsolutePath();
-            name = name.replaceFirst("\\.h2\\.db$", "");
-            name = name + ".lock.db";
-            // Check if the file exists.
-            File file = new File(name);
-            if (!file.exists() || !file.canRead()) {
-                return new String[0];
-            }
-            // Read the property file.
-            Properties prop = new Properties();
-            try {
-                prop.load(new FileReader(file));
-            } catch (IOException e) {
-                return new String[0];
-            }
-
-            String server = prop.get("server").toString();
-            String port = server.replaceFirst("^127.0.1.1:", "");
-
-            String[] ip = getInterfaces();
-            if (ip != null) {
-                ArrayList<String> urls = new ArrayList<String>(ip.length);
-                for (int i = 0; i < ip.length; i++) {
-                    if (!ip[i].matches("127.0.(0|1).1")) { //$NON-NLS-1$
-                        urls.add(String.format("jdbc:h2:tcp://%s:%s/%s", ip[i], port, this.url.getName()));
-                    }
-                }
-                String a[] = new String[urls.size()];
-                return urls.toArray(a);
-            }
-        }
-        return new String[0];
-    }
 
     /**
      * Returns the session factory.

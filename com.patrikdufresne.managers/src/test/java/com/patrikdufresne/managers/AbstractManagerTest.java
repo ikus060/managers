@@ -31,6 +31,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
 
+import org.hibernate.cfg.Configuration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,16 +45,14 @@ public abstract class AbstractManagerTest {
 
     @Before
     public void setupDatabase() throws Exception {
-        DatabaseUrl url = new DatabaseUrl("./unittest");
-        url.localfile().delete();
-        managers = new MockManagers(url);
+        Configuration config = H2DBConfigurations.create("jdbc:h2:mem:unittest" + System.nanoTime(), true, false);
+        managers = new MockManagers(config);
     }
 
     @After
     public void closeDatabase() throws Exception {
         if (managers != null) {
             managers.dispose();
-            managers.getDatabaseUrl().localfile().delete();
         }
     }
 

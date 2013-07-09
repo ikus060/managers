@@ -117,16 +117,6 @@ public class ManagersTest extends AbstractManagerTest {
     }
 
     /**
-     * Check if the server url return unempty list.
-     */
-    @Test
-    public void testGetServerUrl() {
-        String[] urls = getManagers().getServerUrl();
-        assertNotNull(urls);
-        assertTrue(urls.length > 0);
-    }
-
-    /**
      * Check if the list() function return only unarchived objects.
      * 
      * @throws ManagerException
