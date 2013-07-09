@@ -49,12 +49,11 @@ import com.patrikdufresne.managers.Managers;
 /**
  * This class may be used to observe the a specific manager.
  * <p>
- * Notice : event is this class implement the {@link IManagerObserver}
- * interface, the client should not attach the object to a manager.
+ * Notice : event is this class implement the {@link IManagerObserver} interface, the client should not attach the
+ * object to a manager.
  * <p>
- * Subclasses may override the {@link #doIterator()} function to query the
- * database differently. When doing so, it's also recommended to implement
- * doSelect to filter the elements received within the events.
+ * Subclasses may override the {@link #doIterator()} function to query the database differently. When doing so, it's
+ * also recommended to implement doSelect to filter the elements received within the events.
  * <p>
  * This implementation is an adaptation of the {@link ComputedSet} class.
  * 
@@ -65,10 +64,9 @@ import com.patrikdufresne.managers.Managers;
 public class ManagedObjectComputedSet extends AbstractObservableSet implements IManagerObservable {
 
     /**
-     * Inner class that implements interfaces that we don't want to expose as
-     * public API. Each interface could have been implemented using a separate
-     * anonymous class, but we combine them here to reduce the memory overhead
-     * and number of classes.
+     * Inner class that implements interfaces that we don't want to expose as public API. Each interface could have been
+     * implemented using a separate anonymous class, but we combine them here to reduce the memory overhead and number
+     * of classes.
      * 
      * <p>
      * The IChangeListener is attached to every dependency.
@@ -140,11 +138,9 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
     private boolean stale = false;
 
     /**
-     * Default constructor to create an observable computed set for the managers
-     * and element type specified.
+     * Default constructor to create an observable computed set for the managers and element type specified.
      * <p>
-     * This computed set will listen to default manager events and has no
-     * dependencies.
+     * This computed set will listen to default manager events and has no dependencies.
      * 
      * @param managers
      *            the managers
@@ -156,8 +152,8 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
     }
 
     /**
-     * Create an observable set for the managers and element type specified.
-     * This computed set will listen to default manager events.
+     * Create an observable set for the managers and element type specified. This computed set will listen to default
+     * manager events.
      * 
      * @param managers
      *            the managers
@@ -172,8 +168,8 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
     }
 
     /**
-     * Create an observable set for the managers and element type specified.
-     * This computed set will listen to the <code>events</code> specified.
+     * Create an observable set for the managers and element type specified. This computed set will listen to the
+     * <code>events</code> specified.
      * 
      * 
      * @param managers
@@ -319,9 +315,7 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
     final Set doGetSet() {
 
         if (this.dirty) {
-
             startListening();
-
             try {
                 this.cachedSet = new HashSet();
                 Iterator iter = doList().iterator();
@@ -331,6 +325,20 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
             } catch (ManagerException e) {
                 Policy.getLog().log(new Status(IStatus.ERROR, Policy.JFACE_DATABINDING, 0, "Error querying the list from the manager.", e)); //$NON-NLS-1$
                 this.cachedSet = Collections.EMPTY_SET;
+            }
+            this.stale = false;
+            if (this.dependencies != null) {
+                for (int i = 0; i < this.dependencies.length; i++) {
+                    if (this.dependencies[i].isStale()) {
+                        makeStale();
+                        break;
+                    }
+                }
+                if (!this.stale) {
+                    for (int i = 0; i < this.dependencies.length; i++) {
+                        this.dependencies[i].addStaleListener(this.privateInterface);
+                    }
+                }
             }
 
             this.dirty = false;
@@ -342,9 +350,8 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
     /**
      * Query the database.
      * <p>
-     * Sub classes may override this function to query the database using
-     * something else then list(). The collection return by this function must
-     * already be filtered according to {@link #doSelect(Object)}.
+     * Sub classes may override this function to query the database using something else then list(). The collection
+     * return by this function must already be filtered according to {@link #doSelect(Object)}.
      * 
      * @return a collection
      */
@@ -353,11 +360,9 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
     }
 
     /**
-     * Check if the element should be selected. Default implementation always
-     * return true.
+     * Check if the element should be selected. Default implementation always return true.
      * <p>
-     * Subclasses should override this function if it's override
-     * {@link #doIterator()}.
+     * Subclasses should override this function if it's override {@link #doIterator()}.
      * 
      * @param element
      *            the element to check
@@ -368,8 +373,7 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
     }
 
     /**
-     * This implementation return True if the object is a
-     * ManagerObservableCollection with the same manager.
+     * This implementation return True if the object is a ManagerObservableCollection with the same manager.
      */
     @Override
     public boolean equals(Object obj) {
@@ -415,8 +419,7 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
     }
 
     /**
-     * This implementation always return null since all the primary function are
-     * overrided.
+     * This implementation always return null since all the primary function are overrided.
      * 
      * @return
      */
@@ -553,7 +556,6 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
             for (int i = 0; i < this.dependencies.length; i++) {
                 IObservable observable = this.dependencies[i];
                 observable.addChangeListener(this.privateInterface);
-                observable.addStaleListener(this.privateInterface);
             }
         }
 
