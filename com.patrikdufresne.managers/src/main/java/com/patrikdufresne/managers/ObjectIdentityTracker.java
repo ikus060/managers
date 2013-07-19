@@ -17,6 +17,7 @@ package com.patrikdufresne.managers;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,9 +25,8 @@ import org.apache.commons.collections.map.AbstractReferenceMap;
 import org.apache.commons.collections.map.ReferenceIdentityMap;
 
 /**
- * This class is used to keep track of any entity instance during the time life
- * of the managers. It keep a weak reference to the object to the garbage
- * collector may un-allocate the object. Before the object is freed, this class
+ * This class is used to keep track of any entity instance during the time life of the managers. It keep a weak
+ * reference to the object to the garbage collector may un-allocate the object. Before the object is freed, this class
  * is a cache for entities.
  * 
  * @author Patrik Dufresne
@@ -49,8 +49,7 @@ public class ObjectIdentityTracker {
     }
 
     /**
-     * This function is used to find an entity corresponding to the given
-     * parameters.
+     * This function is used to find an entity corresponding to the given parameters.
      * 
      * @param entityName
      *            the entity name (the entity class name)
@@ -61,15 +60,15 @@ public class ObjectIdentityTracker {
     public Collection<?> find(String entityName, Serializable id) {
         purge();
         if (this.cache == null) {
-            return null;
+            return Collections.EMPTY_LIST;
         }
         Map<Serializable, ReferenceIdentityMap> map = this.cache.get(entityName);
         if (map == null) {
-            return null;
+            return Collections.EMPTY_LIST;
         }
         ReferenceIdentityMap weakMap = map.get(id);
         if (weakMap == null) {
-            return null;
+            return Collections.EMPTY_LIST;
         }
         return weakMap.keySet();
     }
@@ -108,8 +107,8 @@ public class ObjectIdentityTracker {
     private Object EXISTS = new Object();
 
     /**
-     * This function is used to unregister an entity object. This function may
-     * be called when the object it removed from the persistent layer.
+     * This function is used to unregister an entity object. This function may be called when the object it removed from
+     * the persistent layer.
      * 
      * @param entityName
      *            the entity class name
