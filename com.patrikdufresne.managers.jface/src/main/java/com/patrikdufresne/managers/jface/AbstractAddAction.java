@@ -215,7 +215,7 @@ public abstract class AbstractAddAction extends Action {
     protected void selectObjects(Collection<? extends ManagedObject> list) {
         if (getSelectionProvider() instanceof StructuredViewer) {
             ((StructuredViewer) getSelectionProvider()).setSelection(new StructuredSelection(list.toArray()), true);
-        } else {
+        } else if (getSelectionProvider() != null) {
             getSelectionProvider().setSelection(new StructuredSelection(list.toArray()));
         }
     }
