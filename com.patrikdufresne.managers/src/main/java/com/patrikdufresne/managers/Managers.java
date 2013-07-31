@@ -442,7 +442,7 @@ public abstract class Managers {
             }
 
             String server = prop.get("server").toString();
-            String port = server.replaceFirst("^127.0.1.1:", "");
+            String port = server.replaceFirst("^[^:]+:", "");
 
             String[] ip = getInterfaces();
             if (ip != null) {
