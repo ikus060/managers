@@ -103,10 +103,11 @@ public abstract class Managers {
 
             @Override
             public void sessionFactoryCreated(SessionFactory factory) {
-                // Validate or update the database
+                // Update the database
                 if ("create".equals(config.getProperty(Environment.HBM2DDL_AUTO))) {
                     updateDatabase(factory);
-                } else {
+                } else if ("custom-update".equals(config.getProperty(Environment.HBM2DDL_AUTO))) {
+                    updateDatabase(factory);
                     validateDatabase(factory);
                 }
             }

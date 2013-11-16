@@ -94,9 +94,11 @@ public class H2DBConfigurations {
         }
         if (create) {
             config.setProperty(Environment.HBM2DDL_AUTO, "create");//$NON-NLS-1$
-        } else {
+        } else if (url.isLocal()) {
             buf.append(";IFEXISTS=TRUE");
-            config.setProperty(Environment.HBM2DDL_AUTO, "validate");//$NON-NLS-1$
+            config.setProperty(Environment.HBM2DDL_AUTO, "custom-update");//$NON-NLS-1$
+        } else {
+            config.setProperty(Environment.HBM2DDL_AUTO, "dummy");
         }
         config.setProperty(Environment.URL, buf.toString());
         // Drop and re-create the database schema on startup
