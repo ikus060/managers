@@ -129,10 +129,13 @@ public abstract class Managers {
         }
 
         // Test the database
+        // TODO: If org.h2.jdbc.JdbcSQLException: The database is read only [90097-176] is
+        // raise at this point. The database was not properly closed.
         Session session = this.factory.withOptions().openSession();
         Transaction t = session.beginTransaction();
         t.rollback();
-
+        session.close();
+        
         // Create the event manager
         this.eventManager = new EventManager();
     }
