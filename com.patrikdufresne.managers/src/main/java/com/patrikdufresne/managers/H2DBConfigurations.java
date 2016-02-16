@@ -51,6 +51,22 @@ public class H2DBConfigurations {
      * @throws MalformedURLException
      */
     public static Configuration create(String dbUrl, boolean create, boolean autoServer) throws MalformedURLException {
+        return create(dbUrl, create, autoServer, false);
+    }
+
+    /**
+     * Create a new configuration to prepare a Managers.
+     * 
+     * @param dbUrl
+     *            the database url. Either a file url or a jdbc url
+     * @param create
+     *            True to create the file
+     * @param autoServer
+     *            True to automatically create a server.
+     * @return the configuration for the managers.
+     * @throws MalformedURLException
+     */
+    public static Configuration create(String dbUrl, boolean create, boolean autoServer, boolean readonly) throws MalformedURLException {
         if (dbUrl == null) {
             throw new IllegalArgumentException();
         }
@@ -99,6 +115,9 @@ public class H2DBConfigurations {
             config.setProperty(Environment.HBM2DDL_AUTO, "custom-update");//$NON-NLS-1$
         } else {
             config.setProperty(Environment.HBM2DDL_AUTO, "dummy");
+        }
+        if(readonly){
+            buf.append(";ACCESS_MODE_DATA=r");
         }
         config.setProperty(Environment.URL, buf.toString());
         // Drop and re-create the database schema on startup
