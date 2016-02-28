@@ -1,9 +1,8 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.patrikdufresne</groupId>
 	<artifactId>com.patrikdufresne.managers-parent</artifactId>
-	<version>1.8-SNAPSHOT</version>
+	<version>1.14</version>
 	<packaging>pom</packaging>
 	<name>com.patrikdufresne.managers-parent</name>
 	<properties>
@@ -11,7 +10,8 @@
 	</properties>
 	<scm>
 		<developerConnection>scm:git:http://git.patrikdufresne.com/common/managers.git</developerConnection>
-	</scm>
+	  <tag>com.patrikdufresne.managers-parent-1.14</tag>
+  </scm>
 	<!-- Define the repository. Used by deploy:deploy -->
 	<distributionManagement>
 		<repository>
