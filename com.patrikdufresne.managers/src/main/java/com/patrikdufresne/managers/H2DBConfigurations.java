@@ -166,6 +166,8 @@ public class H2DBConfigurations {
         }
         if (readonly) {
             buf.append(";ACCESS_MODE_DATA=r");
+        }else{
+            buf.append(";ACCESS_MODE_DATA=rwd");
         }
         config.setProperty(Environment.URL, buf.toString());
         // Drop and re-create the database schema on startup
