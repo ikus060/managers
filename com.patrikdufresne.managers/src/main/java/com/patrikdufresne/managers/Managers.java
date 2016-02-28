@@ -1,23 +1,23 @@
 /**
  * Copyright(C) 2013 Patrik Dufresne Service Logiciel <info@patrikdufresne.com>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package com.patrikdufresne.managers;
 
 import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -29,6 +29,7 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventType;
 import org.hibernate.integrator.spi.Integrator;
+import org.hibernate.jdbc.Work;
 import org.hibernate.metamodel.source.MetadataImplementor;
 import org.hibernate.service.BootstrapServiceRegistryBuilder;
 import org.hibernate.service.ServiceRegistry;
@@ -135,7 +136,7 @@ public abstract class Managers {
         Transaction t = session.beginTransaction();
         t.rollback();
         session.close();
-        
+
         // Create the event manager
         this.eventManager = new EventManager();
     }
@@ -270,6 +271,27 @@ public abstract class Managers {
      */
     public SessionFactory getSessionFactory() {
         return this.factory;
+    }
+
+    /**
+     * Check if database is read-only.
+     * 
+     * @return True if database is read-only.
+     */
+    public boolean isReadOnly() {
+        // Check if readonly
+        final AtomicBoolean readonly = new AtomicBoolean();
+        Session session = getSessionFactory().withOptions().openSession();
+        Transaction t = session.beginTransaction();
+        session.doWork(new Work() {
+            @Override
+            public void execute(Connection connection) throws SQLException {
+                readonly.set(connection.isReadOnly());
+            }
+        });
+        t.commit();
+        session.close();
+        return readonly.get();
     }
 
     @SuppressWarnings("unchecked")
