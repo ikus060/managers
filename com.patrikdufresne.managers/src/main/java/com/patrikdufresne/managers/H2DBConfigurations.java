@@ -67,26 +67,22 @@ public class H2DBConfigurations {
         }
     }
 
-    /**
-     * Create a new configuration to prepare a Managers.
-     * 
-     * @param dbUrl
-     *            the database url. Either a file url or a jdbc url
-     * @param create
-     *            True to create the file
-     * @param autoServer
-     *            True to automatically create a server.
-     * @return the configuration for the managers.
-     * @throws MalformedURLException
-     */
     public static Configuration create(String dbUrl, boolean create, boolean autoServer) throws MalformedURLException {
         try {
-            return create(dbUrl, create, autoServer, false, false);
+            return create(dbUrl, create, autoServer, /* readonly */false);
         } catch (MalformedURLException e) {
             throw e;
         } catch (IOException e) {
             throw new MalformedURLException(e.getMessage());
         }
+    }
+
+    public static Configuration create(String dbUrl, boolean create, boolean autoServer, boolean readonly) throws IOException {
+        return create(dbUrl, create, autoServer, readonly, /* copy */false);
+    }
+
+    public static Configuration create(String dbUrl, boolean create, boolean autoServer, boolean readonly, boolean copy) throws IOException {
+        return create(dbUrl, create, autoServer, readonly, copy, /* lock */null);
     }
 
     /**
@@ -102,10 +98,12 @@ public class H2DBConfigurations {
      *            Open the database in read only mode.
      * @param copy
      *            Open a copy of the database.
+     * @param lock
+     *            Define the locking mechanic: FILE, FS, SOCKET or null to use default.
      * @return the configuration for the managers.
      * @throws IOException
      */
-    public static Configuration create(String dbUrl, boolean create, boolean autoServer, boolean readonly, boolean copy) throws IOException {
+    public static Configuration create(String dbUrl, boolean create, boolean autoServer, boolean readonly, boolean copy, String lock) throws IOException {
         if (dbUrl == null) {
             throw new IllegalArgumentException();
         }
@@ -166,6 +164,14 @@ public class H2DBConfigurations {
         }
         if (readonly) {
             buf.append(";ACCESS_MODE_DATA=r");
+        }
+        // Lock
+        lock = System.getProperty("managers.h2db.filelock", lock);
+        if (lock != null) {
+            lock = lock.toUpperCase();
+            if (lock.equals("FILE") || lock.equals("FS") || lock.equals("SOCKET")) {
+                buf.append(";FILE_LOCK=" + lock);
+            }
         }
         config.setProperty(Environment.URL, buf.toString());
         // Drop and re-create the database schema on startup
