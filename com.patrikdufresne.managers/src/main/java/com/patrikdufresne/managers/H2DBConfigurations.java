@@ -150,6 +150,8 @@ public class H2DBConfigurations {
         } else {
             buf.append(url.toString());
         }
+        // Make sure to use old store (h2.db) not MV
+        buf.append(";MV_STORE=FALSE");
         // Add auto server
         if (autoServer) {
             buf.append(";AUTO_SERVER=TRUE");
