@@ -14,6 +14,7 @@ package com.patrikdufresne.managers;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -196,41 +197,41 @@ public class H2DBConfigurations {
      * Returns a list of possible url to connect remotely to the h2db server.
      * 
      * @return
+     * @throws MalformedURLException
+     *             if the given url doesn't follow URL patterns.
+     * @throws FileNotFoundException
+     *             if the file specified byt the given url doesn't exists.
      */
-    public static String[] getServerUrl(H2DBDatabaseUrl url) {
-        if (url == null || !url.isLocal()) {
-            return new String[0];
+    public static String[] getServerUrl(String dbUrl) throws IOException, MalformedURLException, FileNotFoundException {
+        H2DBDatabaseUrl url = new H2DBDatabaseUrl(dbUrl);
+        if (!url.isLocal()) {
+            throw new FileNotFoundException(dbUrl + " is not a local url");
         }
-        // FIXME the following is H2DB specific.
+        // The following is H2DB specific.
         String name = url.getAbsolutePath();
         name = name.replaceFirst("\\.h2\\.db$", "");
         name = name + ".lock.db";
         // Check if the file exists.
         File file = new File(name);
         if (!file.exists() || !file.canRead()) {
-            return new String[0];
+            throw new FileNotFoundException(name);
         }
         // Read the property file.
         Properties prop = new Properties();
-        try {
-            prop.load(new FileReader(file));
-        } catch (IOException e) {
-            return new String[0];
+        prop.load(new FileReader(file));
+        String server = (String) prop.get("server");
+        if (server == null) {
+            throw new IOException("database is not open in server mode");
         }
-        String server = prop.get("server").toString();
         String port = server.replaceFirst("^127.0.1.1:", "");
         String[] ip = getInterfaces();
-        if (ip == null) {
-            return new String[0];
-        }
         ArrayList<String> urls = new ArrayList<String>(ip.length);
         for (int i = 0; i < ip.length; i++) {
             if (!ip[i].matches("127.0.(0|1).1")) { //$NON-NLS-1$
                 urls.add(String.format("jdbc:h2:tcp://%s:%s/%s", ip[i], port, url.getName()));
             }
         }
-        String a[] = new String[urls.size()];
-        return urls.toArray(a);
+        return urls.toArray(new String[urls.size()]);
     }
 
     /**

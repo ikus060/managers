@@ -59,7 +59,7 @@ class H2DBDatabaseUrl {
      */
     public H2DBDatabaseUrl(String url) throws MalformedURLException {
         if (url == null) {
-            throw new NullPointerException();
+            throw new IllegalArgumentException();
         }
 
         // Try to find the scheme
@@ -108,9 +108,9 @@ class H2DBDatabaseUrl {
             return null;
         }
         try {
-            return new File(this.path).getCanonicalPath();
+            return new File(this.path.replaceFirst(";.*", "")).getCanonicalPath();
         } catch (IOException e) {
-            return new File(this.path).getAbsolutePath();
+            return new File(this.path.replaceFirst(";.*", "")).getAbsolutePath();
         }
     }
 
@@ -120,7 +120,7 @@ class H2DBDatabaseUrl {
      * @return
      */
     public String getName() {
-        return new File(this.path).getName();
+        return new File(this.path.replaceFirst(";.*", "")).getName();
     }
 
     public boolean isInMemory() {
