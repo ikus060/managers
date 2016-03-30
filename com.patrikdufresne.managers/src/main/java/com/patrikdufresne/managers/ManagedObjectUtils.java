@@ -21,6 +21,10 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.Transient;
 
 public class ManagedObjectUtils {
 
@@ -48,6 +52,11 @@ public class ManagedObjectUtils {
             if ("class".equals(name)) {
                 continue; // No point in trying to set an object's class
             }
+            if (origDescriptors[i].getReadMethod().getAnnotation(Transient.class) != null
+                    || origDescriptors[i].getWriteMethod().getAnnotation(Transient.class) != null) {
+                // Don't copy transient value.
+                continue;
+            }
             if (origDescriptors[i].getReadMethod() != null && origDescriptors[i].getWriteMethod() != null) {
                 // Copy the property value if it changed
                 Object newValue = readProperty(orig, origDescriptors[i]);
@@ -60,6 +69,107 @@ public class ManagedObjectUtils {
 
     }
 
+    /**
+     * Returns the element type of the given collection-typed property for the given bean.
+     * 
+     * @param descriptor
+     *            the property being inspected
+     * @return the element type of the given collection-typed property if it is an array property, or Object.class
+     *         otherwise.
+     */
+    public static Class getCollectionPropertyElementType(PropertyDescriptor descriptor) {
+        Class propertyType = descriptor.getPropertyType();
+        return propertyType.isArray() ? propertyType.getComponentType() : Object.class;
+    }
+
+    /**
+     * Goes recursively into the interface and gets all defined propertyDescriptors
+     * 
+     * @param propertyDescriptors
+     *            The result list of all PropertyDescriptors the given interface defines (hierarchical)
+     * @param iface
+     *            The interface to fetch the PropertyDescriptors
+     * @throws IntrospectionException
+     */
+    private static void getInterfacePropertyDescriptors(List propertyDescriptors, Class iface) throws IntrospectionException {
+        BeanInfo beanInfo = Introspector.getBeanInfo(iface);
+        PropertyDescriptor[] pds = beanInfo.getPropertyDescriptors();
+        for (int i = 0; i < pds.length; i++) {
+            PropertyDescriptor pd = pds[i];
+            propertyDescriptors.add(pd);
+        }
+        Class[] subIntfs = iface.getInterfaces();
+        for (int j = 0; j < subIntfs.length; j++) {
+            getInterfacePropertyDescriptors(propertyDescriptors, subIntfs[j]);
+        }
+    }
+
+    /**
+     * @param beanClass
+     * @param propertyName
+     * @return the PropertyDescriptor for the named property on the given bean class
+     */
+    public static PropertyDescriptor getPropertyDescriptor(Class beanClass, String propertyName) {
+        if (!beanClass.isInterface()) {
+            BeanInfo beanInfo;
+            try {
+                beanInfo = Introspector.getBeanInfo(beanClass);
+            } catch (IntrospectionException e) {
+                // cannot introspect, give up
+                return null;
+            }
+            PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();
+            for (int i = 0; i < propertyDescriptors.length; i++) {
+                PropertyDescriptor descriptor = propertyDescriptors[i];
+                if (descriptor.getName().equals(propertyName)) {
+                    return descriptor;
+                }
+            }
+        } else {
+            try {
+                PropertyDescriptor propertyDescriptors[];
+                List pds = new ArrayList();
+                getInterfacePropertyDescriptors(pds, beanClass);
+                if (pds.size() > 0) {
+                    propertyDescriptors = (PropertyDescriptor[]) pds.toArray(new PropertyDescriptor[pds.size()]);
+                    PropertyDescriptor descriptor;
+                    for (int i = 0; i < propertyDescriptors.length; i++) {
+                        descriptor = propertyDescriptors[i];
+                        if (descriptor.getName().equals(propertyName)) return descriptor;
+                    }
+                }
+            } catch (IntrospectionException e) {
+                // cannot introspect, give up
+                return null;
+            }
+        }
+        throw new IllegalArgumentException("Could not find property with name " + propertyName + " in class " + beanClass); //$NON-NLS-1$ //$NON-NLS-2$
+    }
+
+    /**
+     * Sets the contents of the given property on the given source object to the given value.
+     * 
+     * @param source
+     *            the source object which has the property being updated
+     * @param propertyName
+     *            the property being changed
+     * @param value
+     *            the new value of the property
+     */
+    public static void writeProperty(Object source, String propertyName, Object value) {
+        writeProperty(source, getPropertyDescriptor(source.getClass(), propertyName), value);
+    }
+
+    /**
+     * Sets the contents of the given property on the given source object to the given value.
+     * 
+     * @param source
+     *            the source object which has the property being updated
+     * @param propertyDescriptor
+     *            the property being changed
+     * @param value
+     *            the new value of the property
+     */
     public static void writeProperty(Object source, PropertyDescriptor propertyDescriptor, Object value) {
         try {
             Method writeMethod = propertyDescriptor.getWriteMethod();
@@ -74,8 +184,7 @@ public class ManagedObjectUtils {
             writeMethod.invoke(source, new Object[] { value });
         } catch (InvocationTargetException e) {
             /*
-             * InvocationTargetException wraps any exception thrown by the
-             * invoked method.
+             * InvocationTargetException wraps any exception thrown by the invoked method.
              */
             throw new RuntimeException(e.getCause());
         } catch (Exception e) {
@@ -83,6 +192,28 @@ public class ManagedObjectUtils {
         }
     }
 
+    /**
+     * Returns the contents of the given property for the given bean.
+     * 
+     * @param source
+     *            the source bean
+     * @param propertyDescriptor
+     *            the property to retrieve
+     * @return the contents of the given property for the given bean.
+     */
+    public static Object readProperty(Object source, String propertyName) {
+        return readProperty(source, getPropertyDescriptor(source.getClass(), propertyName));
+    }
+
+    /**
+     * Returns the contents of the given property for the given bean.
+     * 
+     * @param source
+     *            the source bean
+     * @param propertyDescriptor
+     *            the property to retrieve
+     * @return the contents of the given property for the given bean.
+     */
     public static Object readProperty(Object source, PropertyDescriptor propertyDescriptor) {
         try {
             Method readMethod = propertyDescriptor.getReadMethod();
@@ -95,8 +226,7 @@ public class ManagedObjectUtils {
             return readMethod.invoke(source, (Object[]) null);
         } catch (InvocationTargetException e) {
             /*
-             * InvocationTargetException wraps any exception thrown by the
-             * invoked method.
+             * InvocationTargetException wraps any exception thrown by the invoked method.
              */
             throw new RuntimeException(e.getCause());
         } catch (Exception e) {

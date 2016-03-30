@@ -19,6 +19,7 @@ import java.util.List;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.Transient;
 
 /**
  * Entity for unit testing
@@ -29,22 +30,29 @@ import javax.persistence.Entity;
 @Entity
 public class MockEntity extends ArchivableObject {
 
-    @Override
-    public String toString() {
-        return "MockEntity [name=" + name + "]";
-    }
-
     /**
      * Name property key
      */
     public static final String NAME = "name";
 
     private List<String> items;
-    private String name;
 
+    private String name;
     @ElementCollection
     public List<String> getItems() {
         return items;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    @Transient
+    public Integer getTransientId() {
+        if (getId() != null) {
+            return getId() * 3;
+        }
+        return null;
     }
 
     public void setItems(List<String> items) {
@@ -55,8 +63,17 @@ public class MockEntity extends ArchivableObject {
         changeSupport.firePropertyChange(NAME, this.name, this.name = value);
     }
 
-    public String getName() {
-        return this.name;
+    @Transient
+    public void setTransientId(Integer id) {
+        if (id != null) {
+            id = id / 3;
+        }
+        setId(id);
+    }
+
+    @Override
+    public String toString() {
+        return "MockEntity [name=" + name + "]";
     }
 
 }
