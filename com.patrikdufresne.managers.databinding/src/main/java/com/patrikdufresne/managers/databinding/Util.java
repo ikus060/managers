@@ -19,11 +19,13 @@ package com.patrikdufresne.managers.databinding;
  * Copyright (c) 2011, Patrik Dufresne. All rights reserved.
  * Patrik Dufresne PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
+import java.lang.reflect.Field;
+
 import org.eclipse.core.databinding.beans.IBeanObservable;
 import org.eclipse.core.databinding.observable.IDecoratingObservable;
 import org.eclipse.core.databinding.observable.IObservable;
 import org.eclipse.core.databinding.observable.IObserving;
-import org.eclipse.core.databinding.observable.value.IObservableValue;
+import org.eclipse.core.internal.databinding.observable.masterdetail.DetailObservableValue;
 
 import com.patrikdufresne.managers.ManagedObject;
 
@@ -61,6 +63,17 @@ public class Util {
             Object observed = ((IObserving) target).getObserved();
             if (observed instanceof ManagedObject) return (ManagedObject) observed;
             if (observed instanceof IObservable) return findManagedObject((IObservable) observed);
+        }
+        
+        if (target instanceof DetailObservableValue) {
+            try {
+                Field f = DetailObservableValue.class.getDeclaredField("outerObservableValue");
+                f.setAccessible(true);
+                IObservable observable = (IObservable) f.get(target);
+                return findManagedObject(observable);
+            } catch (Exception e) {
+                // Swallow exception.
+            }
         }
 
         return null;

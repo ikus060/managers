@@ -18,10 +18,7 @@ package com.patrikdufresne.managers.databinding;
 import java.util.Arrays;
 
 import org.eclipse.core.databinding.UpdateValueStrategy;
-import org.eclipse.core.databinding.beans.IBeanObservable;
-import org.eclipse.core.databinding.observable.IDecoratingObservable;
 import org.eclipse.core.databinding.observable.IObservable;
-import org.eclipse.core.databinding.observable.IObserving;
 import org.eclipse.core.databinding.observable.set.IObservableSet;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.validation.ValidationStatus;
@@ -206,26 +203,7 @@ public class ManagerUpdateValueStrategy extends UpdateValueStrategy {
      * @return a manage object or null if not found
      */
     protected ManagedObject findManagedObject(IObservable target) {
-        if (target instanceof IBeanObservable) {
-            Object observed = ((IBeanObservable) target).getObserved();
-            if (observed instanceof ManagedObject) {
-                return (ManagedObject) observed;
-            }
-        }
-
-        if (target instanceof IDecoratingObservable) {
-            IObservable decorated = ((IDecoratingObservable) target).getDecorated();
-            ManagedObject object = findManagedObject(decorated);
-            if (object != null) return object;
-        }
-
-        if (target instanceof IObserving) {
-            Object observed = ((IObserving) target).getObserved();
-            if (observed instanceof ManagedObject) return (ManagedObject) observed;
-            if (observed instanceof IObservable) return findManagedObject((IObservable) observed);
-        }
-
-        return null;
+        return Util.findManagedObject(target);
     }
 
     /**
