@@ -43,7 +43,7 @@ import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 public abstract class Managers {
 
     private Configuration config;
-    
+
     /**
      * The event table.
      */
@@ -93,7 +93,7 @@ public abstract class Managers {
      */
     public Managers(final Configuration config) throws ManagerException {
         this.config = config;
-        
+
         /*
          * Set a session listener
          */
@@ -283,7 +283,7 @@ public abstract class Managers {
     public String getUrl() {
         return this.config.getProperty(Environment.URL);
     }
-    
+
     /**
      * Check if database is read-only.
      * 

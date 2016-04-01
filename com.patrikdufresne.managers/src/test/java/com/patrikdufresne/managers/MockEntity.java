@@ -38,6 +38,7 @@ public class MockEntity extends ArchivableObject {
     private List<String> items;
 
     private String name;
+
     @ElementCollection
     public List<String> getItems() {
         return items;

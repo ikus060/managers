@@ -64,7 +64,7 @@ public class Util {
             if (observed instanceof ManagedObject) return (ManagedObject) observed;
             if (observed instanceof IObservable) return findManagedObject((IObservable) observed);
         }
-        
+
         if (target instanceof DetailObservableValue) {
             try {
                 Field f = DetailObservableValue.class.getDeclaredField("outerObservableValue");
