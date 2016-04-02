@@ -48,6 +48,7 @@ public abstract class AbstractArchivableManager<T extends ArchivableObject> exte
      * 
      * @throws ManagerException
      */
+    @Override
     public void archive(final Collection<? extends T> s) throws ManagerException {
         checkObject(s);
         getManagers().exec(new Exec() {

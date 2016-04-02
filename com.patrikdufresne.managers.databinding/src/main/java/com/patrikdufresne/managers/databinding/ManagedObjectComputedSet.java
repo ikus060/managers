@@ -281,6 +281,7 @@ public class ManagedObjectComputedSet extends AbstractObservableSet implements I
         // been executed. It is their job to figure out what to do with those
         // notifications.
         getRealm().exec(new Runnable() {
+            @Override
             public void run() {
                 if (dirty) {
                     // We are not currently listening.

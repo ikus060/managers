@@ -122,6 +122,7 @@ public abstract class AbstractManager<T extends ManagedObject> implements IManag
      * 
      * @return
      */
+    @Override
     public Managers getManagers() {
         return this.managers;
     }

@@ -32,10 +32,12 @@ public class DefaultRealm extends Realm {
     /**
      * @return always returns true
      */
+    @Override
     public boolean isCurrent() {
         return true;
     }
 
+    @Override
     protected void syncExec(Runnable runnable) {
         runnable.run();
     }
@@ -43,6 +45,7 @@ public class DefaultRealm extends Realm {
     /**
      * @throws UnsupportedOperationException
      */
+    @Override
     public void asyncExec(Runnable runnable) {
         throw new UnsupportedOperationException("asyncExec is unsupported");
     }
