@@ -15,8 +15,6 @@
  */
 package com.patrikdufresne.managers.jface;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 
