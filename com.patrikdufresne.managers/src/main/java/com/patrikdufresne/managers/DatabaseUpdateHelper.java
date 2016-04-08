@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.Dialect;
@@ -157,15 +158,20 @@ public class DatabaseUpdateHelper {
      */
     public static void execute(SessionFactory factory, final List<String> script) {
         // Run the update script
-        factory.openSession().doWork(new Work() {
-            @Override
-            public void execute(Connection connection) throws SQLException {
-                for (String sql : script) {
-                    Statement stmt = connection.createStatement();
-                    stmt.executeUpdate(sql);
+        Session session = factory.openSession();
+        try {
+            session.doWork(new Work() {
+                @Override
+                public void execute(Connection connection) throws SQLException {
+                    for (String sql : script) {
+                        Statement stmt = connection.createStatement();
+                        stmt.executeUpdate(sql);
+                    }
                 }
-            }
-        });
+            });
+        } finally {
+            session.close();
+        }
     }
 
     /**
